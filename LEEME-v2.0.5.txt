@@ -1,0 +1,12 @@
+THE STARS BARBERSHOP v2.0.5 — CORRECCIÓN SCROLL STAFF
+
+1. Copia TODOS los archivos src del ZIP al src del proyecto (reemplazando).
+2. Conserva la carpeta public/images (este paquete incluye las imágenes).
+3. Abre /staff, prueba propietario y barbero en Chrome DevTools a 430 × 932.
+4. El scroll de Staff ahora está dentro del panel mismo y debe funcionar con rueda/gesto táctil.
+5. Se eliminó la sección «Activar perfil nuevo (demo)» de login.
+6. Al CREAR perfiles nuevos, el propietario asigna una contraseña temporal de 6 caracteres en la DEMO para no dejar cuentas inservibles. Nunca usar contraseñas reales.
+7. No hay backend ni autenticación segura; todo funciona con datos ficticios del navegador.
+8. Para confirmar el scroll, desplazarse dentro del panel blanco usando la rueda o gesto táctil; comprobar la tabla y formulario completo y modal de cliente.
+
+Nota: el porcentaje mostrado en Chrome DevTools controla la ESCALA DE PRESENTACIÓN del teléfono simulado y no la anchura de diseño CSS (430px). Si la simulación no cabe físicamente en la pantalla Mac al 100%, se puede ver al 75% sin modificar las dimensiones de prueba.

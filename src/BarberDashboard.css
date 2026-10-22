@@ -1,0 +1,224 @@
+/** THE STARS BARBERSHOP — BarberDashboard.css (v1.1)
+ * Estilos encapsulados para no modificar la presentación del cliente.
+ * Layout adaptable: calendario arriba y agenda debajo en teléfonos.
+ */
+.barber-area { min-height:100svh; background:#f5f6f8; color:#17212e; padding:40px 18px 75px; font-family:Arial,Helvetica,sans-serif; }
+.barber-area * { box-sizing:border-box; }
+.barber-shell { max-width:1160px; margin:0 auto; }
+.barber-panel-header { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
+.barber-panel-header h2 { color:#16233b; font-size:clamp(27px,4vw,39px); margin:4px 0 6px; }
+.barber-panel-header p { margin:0; color:#5a6472; }
+.barber-kicker { color:#99732d!important; font-size:11px; font-weight:800; letter-spacing:1.6px; }
+.barber-header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.barber-header-actions button, .barber-modal-actions button, .barber-today, .barber-simple-link { background:white; border:1px solid #cdd2dc; border-radius:9px; padding:11px 15px; cursor:pointer; font-weight:700; color:#233047; }
+.barber-demo-banner { border:1px solid #ead59b; background:#fff9e9; color:#70541f; border-radius:10px; padding:12px 15px; font-size:13px; line-height:1.55; }
+.barber-calendar-layout { display:grid; grid-template-columns:minmax(300px,0.92fr) minmax(0,1.3fr); gap:22px; align-items:start; margin-top:22px; }
+.barber-card { border:1px solid #e2e5eb; background:#fff; border-radius:16px; padding:24px; box-shadow:0 12px 30px rgba(19,31,47,.045); }
+.barber-month-controls { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:20px; }
+.barber-month-controls h3 { font-size:19px; text-transform:capitalize; text-align:center; margin:0; color:#14213b; }
+.barber-month-controls button { background:#f5f5f5; border:1px solid #e1e1e1; height:36px; width:37px; border-radius:9px; font-size:28px; cursor:pointer; line-height:24px; }
+.barber-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.barber-weekday { text-align:center; color:#737d8b; font-size:12px; font-weight:700; padding:10px 0; }
+.barber-day { position:relative; min-height:48px; border:1px solid transparent; background:transparent; color:#283446; font-weight:700; cursor:pointer; border-radius:10px; }
+.barber-day:hover { background:#f4eddb; }
+.barber-day.today { border-color:#c9a454; }
+.barber-day.selected { background:#c39b4c; color:#151515; }
+.barber-day-dot { display:block; width:5px; height:5px; background:#aa812b; border-radius:50%; margin:3px auto -7px; }
+.barber-day.selected .barber-day-dot { background:#fff; }
+.barber-today { margin-top:20px; }
+.barber-day-heading { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+.barber-day-heading h3 { margin:0 0 8px; font-size:20px; color:#16233b; }
+.barber-day-heading p { margin:0; font-size:14px; color:#747c89; text-transform:capitalize; }
+.barber-add, .barber-gold-button { background:#c39b4c!important; border:1px solid #b79041!important; border-radius:9px; color:#171717!important; font-weight:800; padding:13px 17px; cursor:pointer; }
+.barber-appointment-list { padding:0; margin:0; list-style:none; }
+.barber-appointment-list li { border-top:1px solid #eceef1; }
+.barber-client-row { display:flex; width:100%; gap:13px; align-items:center; background:#fff; border:0; text-align:left; cursor:pointer; padding:17px 2px; color:#16233b; }
+.barber-client-row:hover { background:#fbf8ee; }
+.barber-client-row time { color:#99752b; font-weight:800; font-size:13px; min-width:78px; }
+.barber-client-row span:nth-child(2) { display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
+.barber-client-row small { color:#687587; overflow-wrap:anywhere; }
+.barber-arrow { font-size:26px; color:#99752b; }
+.barber-empty { background:#f7f8fa; border-radius:10px; padding:28px; text-align:center; color:#697586; }
+.barber-small-note { color:#777f8f; font-size:12px; line-height:1.6; margin-top:18px; }
+.barber-login-card { max-width:450px; margin:35px auto; background:#fff; border:1px solid #e3e4e7; border-radius:20px; padding:30px; box-shadow:0 20px 55px rgba(0,0,0,.055); }
+.barber-login-card h2 { color:#16233b; margin:9px 0 16px; }
+.barber-login-icon { color:#b58a33; font-size:40px; text-align:center; }
+.barber-login-card form, .barber-modal-form { display:grid; gap:17px; }
+.barber-login-card label, .barber-modal-form label { display:grid; gap:7px; color:#344052; font-size:14px; font-weight:700; }
+.barber-login-card input, .barber-modal-form input { width:100%; min-height:45px; border:1px solid #cdd4dd; border-radius:8px; padding:10px 12px; background:#fff; color:#15213a; font:inherit; }
+.barber-login-card form .barber-gold-button { width:100%; }
+.barber-demo-hint { color:#5f6b7e; font-size:12px; overflow-wrap:anywhere; line-height:1.7; }
+.barber-simple-link { font-size:13px; margin-bottom:18px; }
+.barber-error { color:#a12c2c; background:#fff0f0; padding:10px; border-radius:7px; font-size:13px; }
+.barber-modal-overlay { position:fixed; inset:0; z-index:9999; background:rgba(5,11,23,.65); display:flex; align-items:center; justify-content:center; padding:20px; overflow:auto; }
+.barber-modal { position:relative; max-width:470px; width:100%; max-height:calc(100dvh - 40px); overflow-y:auto; background:#fff; border-radius:16px; padding:28px; box-shadow:0 25px 65px rgba(0,0,0,.3); }
+.barber-modal h3 { color:#16233b; margin:0 32px 18px 0; font-size:22px; }
+.barber-modal-close { position:absolute; top:14px; right:14px; background:none; border:0; color:#273145; font-size:22px; cursor:pointer; }
+.barber-client-details { margin:0 0 23px; }
+.barber-client-details div { display:flex; gap:14px; justify-content:space-between; border-bottom:1px solid #eee; padding:11px 0; }
+.barber-client-details dt { color:#6e7581; }
+.barber-client-details dd { margin:0; text-align:right; color:#17212e; font-weight:700; overflow-wrap:anywhere; }
+.barber-modal-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; margin-top:18px; }
+.barber-danger, .barber-danger-outline { color:#a32323!important; border-color:#e7bcbc!important; }
+.barber-danger { background:#ffe4e4!important; }
+.barber-confirm-delete p { color:#932222; }
+@media (max-width:780px) { .barber-calendar-layout { grid-template-columns:1fr; } .barber-panel-header { align-items:flex-start; flex-direction:column; } }
+@media (max-width:480px) { .barber-area { padding:20px 12px 55px; } .barber-card { padding:16px 13px; } .barber-day { min-height:43px; } .barber-client-row time { min-width:70px; } .barber-login-card { padding:22px; } .barber-modal { padding:22px 16px; } }
+
+/* ============================================================
+   V1.3 - Outlook: cuadrícula mensual completa y vista móvil sana.
+   Estas reglas reemplazan visualmente el calendario compacto v1.2.
+   ============================================================ */
+.barber-area { display:block; width:100%; max-width:100%; min-width:0; overflow-x:clip; padding:22px 14px 50px; }
+.barber-shell { width:100%; max-width:1480px; min-width:0; margin-inline:auto; }
+.barber-calendar-layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(290px,0.85fr); gap:16px; align-items:start; width:100%; }
+.barber-card { min-width:0; padding:0; border-radius:7px; overflow:hidden; }
+.barber-month-controls { height:auto; min-height:60px; margin:0; padding:10px 14px; display:flex; justify-content:flex-start; gap:12px; border-bottom:1px solid #d8dce3; }
+.barber-month-controls h3 { text-align:left; font-size:clamp(16px,2vw,24px); margin:0; }
+.barber-month-navigation { display:flex; gap:3px; align-items:center; }
+.barber-month-navigation button { height:34px; width:34px; padding:0; }
+.barber-month-controls .barber-today { margin:0; padding:8px 12px; white-space:nowrap; }
+.barber-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:0; width:100%; }
+.barber-weekday { padding:13px 2px; background:#f7f8fa; border-right:1px solid #e0e2e7; border-bottom:1px solid #d9dde5; font-size:12px; }
+.barber-day { min-width:0; height:clamp(72px,10vw,116px); min-height:0; border:0; border-right:1px solid #e0e2e7; border-bottom:1px solid #e0e2e7; border-radius:0; background:white; text-align:left; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; padding:9px; }
+.barber-day.outside { background:#f7f7f8; color:#999; }
+.barber-day.today { border-color:#e0e2e7; }
+.barber-day-number { display:inline-flex; align-items:center; justify-content:center; min-width:25px; height:25px; border-radius:50%; }
+.barber-day.today .barber-day-number { background:#bc8d30; color:#fff; }
+.barber-day.selected { background:#fff4d8; box-shadow:inset 0 0 0 2px #b98c30; color:#15213a; }
+.barber-day.selected .barber-day-number { background:#bf922f; color:white; }
+.barber-day-count { display:inline-block; background:#ead7ae; border-radius:3px; font-size:11px; padding:2px 6px; margin-top:6px; }
+.barber-appointments { padding:18px; }
+.barber-day-heading { margin-bottom:12px; }
+.barber-day-heading h3 { font-size:19px; }
+.barber-day-heading .barber-add { white-space:normal; }
+.barber-panel-header, .barber-panel-header > div { min-width:0; }
+@media (max-width:950px) {
+  .barber-calendar-layout { grid-template-columns:minmax(0,1fr); }
+  .barber-appointments { margin-top:0; }
+  .barber-day { height:clamp(65px,12vw,100px); }
+}
+@media (max-width:540px) {
+  .barber-area { padding:12px 10px 35px; overflow-x:hidden; }
+  .barber-panel-header h2 { font-size:27px; }
+  .barber-header-actions { width:100%; }
+  .barber-header-actions button { flex:1; padding:10px 6px; font-size:12px; }
+  .barber-card { width:100%; }
+  .barber-month-controls { padding:8px; gap:6px; flex-wrap:wrap; }
+  .barber-month-controls h3 { font-size:18px; flex:1; }
+  .barber-weekday { font-size:10px; padding:9px 0; }
+  .barber-day { height:clamp(51px,14vw,68px); padding:4px; }
+  .barber-day-number { height:23px; min-width:23px; font-size:13px; }
+  .barber-day-count { margin-top:0; font-size:10px; padding:1px 4px; }
+  .barber-appointments { padding:15px 12px; }
+  .barber-client-row { gap:7px; }
+  .barber-client-row time { min-width:68px; }
+  .barber-demo-banner { overflow-wrap:anywhere; }
+}
+
+/* v1.5: barra Outlook sin solapes, incluso en móvil. */
+.barber-month-controls { display:grid!important; grid-template-columns:auto auto minmax(0,1fr); justify-content:start!important; align-items:center!important; column-gap:12px!important; row-gap:8px!important; }
+.barber-month-controls .barber-today { display:inline-flex!important; align-items:center; justify-content:center; width:auto!important; min-width:60px; height:38px!important; margin:0!important; font-size:14px!important; line-height:1!important; }
+.barber-month-navigation { display:inline-flex!important; align-items:center; flex-shrink:0; gap:5px!important; }
+.barber-month-navigation button { width:36px!important; height:38px!important; flex:none; line-height:1!important; font-size:23px!important; }
+.barber-month-controls .barber-month-title { position:static!important; min-width:0; margin:0!important; text-align:left!important; line-height:1.25; font-size:clamp(16px,2vw,23px)!important; }
+.barber-official-logo { display:block; width:165px; height:auto; margin:0 auto 10px; }
+.barber-logo-small { width:100px; margin:0 0 7px; }
+@media(max-width:570px) {
+ .barber-month-controls { grid-template-columns:auto auto 1fr!important; gap:6px!important; padding:10px 7px!important; }
+ .barber-month-navigation button { width:31px!important; height:34px!important; font-size:20px!important; }
+ .barber-month-controls .barber-today { min-width:48px; height:34px!important; font-size:12px!important; padding:5px 7px!important; }
+ .barber-month-controls .barber-month-title { font-size:14px!important; overflow-wrap:normal; }
+}
+@media(max-width:380px) {
+ .barber-month-controls { grid-template-columns:auto auto!important; }
+ .barber-month-controls .barber-month-title { grid-column:1/-1; font-size:18px!important; }
+}
+
+/* v1.6: activación de contraseña solo para las cuentas nuevas de demostración. */
+.barber-demo-activation{margin-top:20px;padding:12px;border:1px solid #dbc38e;border-radius:10px}
+.barber-demo-activation summary{font-weight:bold;cursor:pointer}
+.barber-demo-activation p{font-size:13px;line-height:1.6}
+
+/* v1.8 — formulario del perfil profesional */
+.profile-overlay{position:fixed;inset:0;z-index:1300;background:#0b172bb0;display:grid;place-items:center;padding:16px}.profile-dialog{background:#fff;border-radius:17px;width:min(100%,520px);max-height:92vh;overflow-y:auto;padding:24px;box-shadow:0 20px 70px #0005;color:#1c2839}.profile-dialog>p{font-size:13px;color:#596473}.profile-fields{display:grid;gap:11px}.profile-fields label{display:grid;gap:5px;font-size:13px;font-weight:650}.profile-fields input{width:100%;border:1px solid #cbd1db;border-radius:8px;padding:10px;background:#fff}.profile-fields input:disabled{background:#eee}.profile-photo-preview{width:90px;height:90px;object-fit:cover;border-radius:50%}.profile-dialog-actions{display:flex;justify-content:end;gap:9px}.profile-dialog-actions button{padding:10px 16px;border-radius:8px;cursor:pointer}
+
+/* v2.0: agenda totalmente desplazable y cuadrícula compacta en teléfono. */
+.barber-area,.barber-shell,.barber-calendar-layout,.barber-calendar-card,.barber-appointments { max-height:none!important; overflow-y:visible!important; }
+.barber-appointments { scroll-margin-top:16px; }
+@media (max-width:950px) {
+ .barber-calendar-layout { display:flex; flex-direction:column; align-items:stretch; gap:12px; }
+ .barber-calendar-layout > .barber-card { flex:0 0 auto; width:100%; }
+ .barber-appointments { min-height:170px; }
+}
+@media (max-width:540px) {
+ .barber-day { height:39px!important; min-height:39px!important; padding:3px!important; }
+ .barber-day-number { min-width:19px!important; height:19px!important; font-size:12px!important; }
+ .barber-day-count { font-size:9px!important; margin-top:0!important; line-height:12px!important; padding:0 4px!important; }
+ .barber-weekday { padding:6px 0!important; }
+ .barber-month-controls { min-height:0!important; }
+ .barber-appointments { padding:14px 12px!important; }
+ .barber-client-row { padding:12px 2px; }
+}
+
+/* v2.0.1: acceso inmediato a las citas en teléfonos.
+   No depender del scroll del calendario mensual para descubrir el listado. */
+@media (max-width:950px) {
+  .barber-calendar-layout { display:flex!important; flex-direction:column!important; gap:12px!important; }
+  .barber-calendar-layout > .barber-appointments { order:0!important; display:block!important; width:100%!important; overflow:visible!important; min-height:0!important; }
+  .barber-calendar-layout > .barber-calendar-card { order:1!important; display:block!important; width:100%!important; }
+  .barber-appointments .barber-day-heading { position:static; }
+  .barber-appointments .barber-appointment-list { display:block!important; max-height:none!important; overflow:visible!important; }
+  .barber-client-row { width:100%; }
+}
+@media (max-width:540px) {
+  .barber-area { min-height:100dvh; height:auto!important; overflow:visible!important; }
+  .barber-shell { height:auto!important; overflow:visible!important; }
+  .barber-calendar-layout { margin-top:14px!important; }
+  .barber-appointments { border:2px solid #e6cd92!important; border-radius:12px!important; padding:14px!important; }
+  .barber-day-heading { margin-bottom:10px!important; }
+}
+
+/* v2.0.3: modal usable al 100% en móviles, incluido Safari. */
+@media screen and (max-width: 750px) {
+ .barber-modal-overlay {position:fixed!important; inset:0!important; display:flex!important; align-items:flex-start!important; justify-content:center!important; padding:12px!important; padding-top:max(12px,env(safe-area-inset-top))!important; padding-bottom:max(12px,env(safe-area-inset-bottom))!important; overflow-y:auto!important; overscroll-behavior:contain;}
+ .barber-modal {flex:none!important; margin:auto 0!important; width:100%!important; max-width:470px!important; max-height:calc(100dvh - 24px)!important; overflow-y:auto!important; -webkit-overflow-scrolling:touch; padding:22px 16px 18px!important; border-radius:15px!important;}
+ .barber-modal-actions {position:sticky; bottom:-18px; background:#fff; padding:12px 0 18px; z-index:2; justify-content:stretch;}
+ .barber-modal-actions button {flex:1 1 125px; min-height:44px;}
+ .barber-client-details div {min-width:0;}
+ .barber-client-details dt,.barber-client-details dd {min-width:0; overflow-wrap:anywhere;}
+}
+
+/* v2.0.4 mobile: compact, natural scrolling and fully usable modals. */
+@media screen and (max-width:750px) {
+ .barber-area,.barber-shell {width:100%!important; max-width:100%!important; min-width:0!important; height:auto!important; min-height:100dvh!important; overflow:visible!important;}
+ .barber-area {padding:12px 10px 65px!important;}
+ .barber-panel-header {gap:7px!important; margin-bottom:10px!important;}
+ .barber-official-logo {width:90px!important; margin:0 0 4px!important;}
+ .barber-panel-header h2 {font-size:23px!important;}
+ .barber-header-actions {display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important; width:100%!important; gap:6px!important;}
+ .barber-header-actions button {min-width:0!important; width:100%!important; padding:10px 3px!important; font-size:11px!important; overflow-wrap:anywhere;}
+ .barber-demo-banner {padding:9px!important; font-size:12px!important;}
+ .barber-calendar-layout {width:100%!important; min-width:0!important; gap:10px!important;}
+ .barber-card,.barber-calendar-card,.barber-appointments {min-width:0!important; max-width:100%!important; width:100%!important;}
+ .barber-client-row {min-width:0!important; max-width:100%!important;}
+ .barber-modal-overlay {position:fixed!important; inset:0!important; padding:10px!important; overflow-y:auto!important; display:flex!important; align-items:flex-start!important; justify-content:center!important;}
+ .barber-modal {position:relative!important; flex:0 1 auto!important; width:100%!important; max-width:470px!important; max-height:calc(100dvh - 20px)!important; height:auto!important; margin:0 auto!important; padding:20px 14px 14px!important; overflow-y:auto!important; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;}
+ .barber-modal-actions {position:sticky!important; bottom:-14px!important; display:flex!important; background:white!important; padding:10px 0 14px!important; flex-wrap:wrap!important; z-index:2;}
+ .barber-modal-actions button {min-width:0!important; flex:1 1 110px!important;}
+ .profile-dialog {max-height:calc(100dvh - 20px)!important; overflow-y:auto!important;}
+}
+
+/* v2.0.5 — SCROLLPORT AISLADO. Evita que html/body/DevTools corten Staff.
+   Sin alterar posición, escala ni columnas del escritorio. */
+@media screen {
+ .barber-area {
+   position:relative!important;
+   height:100vh!important; height:100dvh!important;
+   min-height:0!important; max-height:none!important;
+   overflow-y:scroll!important; overflow-x:hidden!important;
+   -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;
+   scrollbar-width:auto;
+ }
+ .barber-area::after { content:""; display:block; height:20px; flex:none; }
+}

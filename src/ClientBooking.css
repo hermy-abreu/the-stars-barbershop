@@ -1,0 +1,115 @@
+/**
+ * THE STARS BARBERSHOP — ClientBooking.css (v1.0)
+ * Estilos autónomos del flujo interactivo de reserva.
+ * Diseño responsive con giro 3D y alternativa sin movimiento.
+ */
+.client-booking { background: #f7f7f5; padding: 70px 18px 95px; color: #101b35; scroll-margin-top: 100px; }
+.client-booking .cb-container { width: min(850px, 100%); margin: auto; }
+.client-booking h2 { color: #101b35; font-size: clamp(28px, 4vw, 42px); margin: 0 0 16px; }
+.client-booking .cb-eyebrow { color: #a97819; font-size: 12px; font-weight: 800; letter-spacing: 3px; }
+.cb-demo { background: #fff6df; border: 1px solid #e5c779; border-radius: 9px; padding: 12px 15px; font-size: 12px; font-weight: 750; color: #694b0c; }
+.cb-progress { display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; margin: 30px 0; }
+.cb-progress-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; font-size: 11px; color: #707989; font-weight: 700; }
+.cb-progress-number { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; background: #e0e1e5; color: #626977; }
+.cb-progress-item.active .cb-progress-number { background: #c99531; color: #171717; box-shadow: 0 0 0 4px #f2deb4; }
+.cb-progress-item.done .cb-progress-number { background: #17243e; color: white; }
+.cb-progress-item.active { color: #101b35; }
+.cb-perspective { perspective: 1300px; }
+.cb-panel { min-height: 340px; background: #fff; border-radius: 18px; padding: clamp(20px,4vw,40px); border: 1px solid #e0e2e5; box-shadow: 0 14px 40px #101b3510; transform-style: preserve-3d; backface-visibility: hidden; }
+.cb-panel h3 { font-size: clamp(21px,3vw,27px); margin: 0 0 20px; color: #101b35; }
+.cb-fields { display: grid; gap: 17px; }
+.cb-fields label { display: grid; gap: 7px; font-size: 14px; font-weight: 700; }
+.cb-fields input { width: 100%; min-height: 51px; border: 1px solid #cfd3da; border-radius: 9px; padding: 10px 14px; background: white; color: #101b35; font-size: 16px; }
+.cb-fields input:focus { outline: 2px solid #c99531; outline-offset: 2px; }
+.cb-help { font-size: 13px; line-height: 1.6; color: #596678; margin: 3px 0 15px; }
+.cb-barber-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.cb-barber { cursor: pointer; display: flex; align-items: center; gap: 14px; min-width: 0; padding: 13px; border: 1px solid #dce0e6; border-radius: 13px; background: #fff; }
+.cb-barber.selected { border: 2px solid #c99531; background: #fffaf0; padding: 12px; }
+.cb-barber input, .cb-service input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.cb-barber:focus-within, .cb-service:focus-within { outline: 3px solid #c99531; outline-offset: 2px; }
+.cb-portrait { flex: none; display: grid; place-items: center; width: 74px; height: 85px; border-radius: 10px; overflow: hidden; background: linear-gradient(145deg,#192a43,#c99531); color: white; font-size: 35px; font-weight: 800; }
+.cb-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.cb-barber-name { font-weight: 800; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cb-radio-dot { width: 18px; height: 18px; border: 2px solid #aeb7c6; border-radius: 50%; flex: none; }
+.cb-barber.selected .cb-radio-dot { border: 6px solid #c99531; }
+.cb-time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cb-time-grid button, .cb-service { min-height: 48px; border: 1px solid #d8dce4; border-radius: 9px; background: white; color: #101b35; font: inherit; cursor: pointer; }
+.cb-time-grid button.selected, .cb-service.selected { background: #fff2d7; border: 2px solid #c99531; font-weight: 800; }
+.cb-service-groups { display: grid; gap: 20px; }
+.cb-service-groups h4 { margin: 0 0 10px; color: #977022; }
+.cb-service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.cb-service { padding: 12px; display: flex; align-items: center; justify-content: flex-start; font-size: 13px; }
+.cb-summary dl { margin: 0; }
+.cb-summary dl div { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 12px; padding: 13px 0; border-bottom: 1px solid #eee; }
+.cb-summary dt { color: #596678; font-size: 13px; }
+.cb-summary dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.cb-warning { padding: 14px; background: #fff6df; border: 1px solid #e5c779; color: #674c13; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+.cb-error { color: #9e2525; font-size: 14px; font-weight: 700; }
+.cb-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 22px; }
+.cb-actions button { min-height: 48px; padding: 11px 24px; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; }
+.cb-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.cb-back { background: white; border: 1px solid #cad0d9; color: #101b35; }
+.cb-next { background: linear-gradient(110deg,#f5d782,#d69b28); color: #181818; border: none; }
+/* La cara de salida gira 90° y la de entrada termina los otros 90°. */
+.cb-out-forward { animation: cb-out-forward .28s ease-in forwards; }
+.cb-in-forward { animation: cb-in-forward .28s ease-out both; }
+.cb-out-backward { animation: cb-out-backward .28s ease-in forwards; }
+.cb-in-backward { animation: cb-in-backward .28s ease-out both; }
+@keyframes cb-out-forward { from { transform: rotateY(0); opacity:1 } to { transform: rotateY(90deg); opacity:0 } }
+@keyframes cb-in-forward { from { transform: rotateY(-90deg); opacity:0 } to { transform: rotateY(0); opacity:1 } }
+@keyframes cb-out-backward { from { transform: rotateY(0); opacity:1 } to { transform: rotateY(-90deg); opacity:0 } }
+@keyframes cb-in-backward { from { transform: rotateY(90deg); opacity:0 } to { transform: rotateY(0); opacity:1 } }
+@media (max-width: 600px) {
+  .client-booking { padding: 40px 14px 70px; scroll-margin-top: 85px; }
+  .cb-progress-label { font-size: 10px; }
+  .cb-progress-number { width: 28px; height: 28px; }
+  .cb-barber-grid, .cb-service-grid { grid-template-columns: 1fr; }
+  .cb-portrait { width: 70px; height: 78px; }
+  .cb-panel { min-height: 390px; }
+  .cb-actions button { flex: 1; padding: 11px 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cb-out-forward, .cb-in-forward, .cb-out-backward, .cb-in-backward { animation-duration: .01ms; }
+}
+
+/* ===========================================================
+   v1.0 — DESPLAZAMIENTO MÓVIL SIN CAMBIAR EL ZOOM
+   El botón de navegación permanece en el flujo normal.
+   Nunca usamos altura fija, overflow:hidden ni bloqueo del scroll.
+   =========================================================== */
+.client-booking { height: auto; min-height: 0; overflow: visible; scroll-margin-top: 82px; }
+.client-booking .cb-container,
+.cb-perspective,
+.cb-panel { height: auto; max-height: none; overflow: visible; }
+.cb-actions { position: relative; z-index: 2; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .client-booking { padding: 30px 12px 105px; scroll-margin-top: 78px; }
+  .cb-container { width: 100%; }
+  .cb-progress { gap: 3px; margin: 16px 0; }
+  .cb-progress-label { font-size: 9px; overflow-wrap: anywhere; }
+  .cb-panel { min-height: 0; padding: 20px 15px; }
+  .cb-fields { gap: 12px; }
+  .cb-actions { margin-top: 20px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .cb-actions button { min-width: 0; }
+}
+
+/* v1.8 — perfil público dentro de selección */
+.cb-person-card{display:flex;flex-direction:column;min-width:0}.cb-person-card .cb-barber{flex:1}.cb-profile-link{border:0;background:transparent;color:#9b751e;text-decoration:underline;cursor:pointer;padding:10px;font-weight:700}
+.cb-profile-overlay{position:fixed;inset:0;z-index:1200;background:#0009;display:grid;place-items:center;padding:20px}.cb-profile-modal{position:relative;background:white;border-radius:16px;padding:26px;width:min(95vw,430px);max-height:90vh;overflow:auto;box-shadow:0 15px 60px #0004}.cb-profile-close{position:absolute;right:12px;top:12px;border:0;background:#eee;border-radius:50%;padding:7px 11px;cursor:pointer}.cb-profile-photo{width:106px;height:106px;border-radius:50%;object-fit:cover}.cb-profile-modal p{overflow-wrap:anywhere}
+
+/* v2.0: entrada visible bajo el encabezado sticky y navegación sin perder el formulario. */
+.client-booking.section { padding-top:24px; scroll-margin-top:90px; }
+.client-booking .cb-eyebrow { margin-top:0; margin-bottom:10px; }
+.client-booking h2 { margin-bottom:12px; }
+.client-booking .cb-demo { margin:12px 0; }
+.client-booking .cb-progress { margin:20px 0 18px; }
+.cb-actions-summary { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1.15fr); gap:8px; }
+.cb-actions-summary button { width:100%; min-width:0; white-space:normal; padding:10px 8px; font-size:clamp(11px,1.4vw,14px); line-height:1.25; }
+.cb-actions-summary .cb-confirm { background:linear-gradient(110deg,#f5d782,#d69b28); border:1px solid #bd8c2a; color:#101827; }
+.cb-actions-summary .cb-confirm:disabled { opacity:.65; }
+@media(max-width:640px){
+ .client-booking.section { padding-top:14px; scroll-margin-top:72px; }
+ .client-booking .cb-progress { margin:14px 0 14px; }
+ .cb-actions-summary { gap:5px; }
+ .cb-actions-summary button { padding:9px 4px; font-size:11px; min-height:50px; }
+}

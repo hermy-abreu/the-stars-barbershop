@@ -1,0 +1,15 @@
+THE STARS BARBERSHOP v2.0 — PROTOTIPO LOCAL COMPLETO
+
+Actualiza copiando todo src/ y el contenido de public/images/ al proyecto anterior.
+Conserva package.json, index.html, node_modules y configuración Vite. Ejecuta npm run dev.
+
+NOVEDADES
+- Paso 5: Anterior | Confirmar cita | Comenzar de nuevo en una fila.
+- Confirmar cita habilitado con datos completos; guardado al pulsar y bloqueo de doble clic.
+- Reservas visibles inmediatamente bajo el encabezado y desplazamiento al cambiar de paso.
+- Calendario móvil compacto y desplazamiento hacia la lista de clientes al seleccionar un día.
+- Horarios 06:00 a 22:00 en intervalos ilustrativos de 30 minutos, sujetos a validación con el propietario.
+- Se conservan los reportes del propietario exactamente como estaban.
+
+IMPORTANTE: DEMO localStorage, usuarios/contraseñas no seguros, sin backend y sin sincronización entre dispositivos.
+NO INGRESAR INFORMACIÓN PERSONAL REAL. La fase de instalación PWA va DESPUÉS de comprobar esta versión.

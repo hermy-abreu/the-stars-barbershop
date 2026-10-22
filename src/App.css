@@ -1,0 +1,275 @@
+/** THE STARS BARBERSHOP — src/App.css — V0.4
+ * Diseño basado en la referencia: cabecera blanca, hero fotográfico,
+ * tonos dorados, tarjetas de servicios y mapa responsive. Archivo completo.
+ */
+:root { --navy:#0d1731; --gold:#c88c22; --gold-light:#f8db8c; --muted:#566174; }
+#root { min-height:100vh; }
+.site { background:#fff; color:var(--navy); }
+.container { max-width:1240px; width:92%; margin:0 auto; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+/* Cabecera fija que se adapta sin esconder enlaces importantes. */
+.header { background:rgba(255,255,255,.97); position:sticky; top:0; z-index:30; border-bottom:1px solid #eee; box-shadow:0 3px 15px #00000008; }
+.header-inner { max-width:1320px; width:95%; min-height:90px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:22px; }
+.brand { display:flex; gap:9px; align-items:center; font-size:17px; line-height:1.05; font-weight:900; text-decoration:none; color:var(--navy); flex-shrink:0; }
+.brand-star { color:var(--gold); font-size:40px; }
+.brand small { display:block; font-size:10px; letter-spacing:3px; padding-top:5px; }
+.nav { display:flex; flex-wrap:wrap; justify-content:center; gap:25px; }
+.nav a { font-weight:700; font-size:14px; text-decoration:none; color:var(--navy); }
+.nav a:hover, .text-link:hover { color:var(--gold); }
+.header-actions { display:flex; align-items:center; gap:12px; }
+.gold-button { display:inline-flex; justify-content:center; align-items:center; gap:8px; background:linear-gradient(125deg,#f7d780,#d18f20); color:#17120a; padding:16px 22px; border-radius:12px; font-weight:800; text-decoration:none; box-shadow:0 6px 15px #8e621b2d; }
+.gold-button:hover { filter:brightness(1.05); }
+/* Portada: recorte temporal del material visual entregado. */
+.hero { position:relative; isolation:isolate; min-height:650px; display:flex; align-items:center; scroll-margin-top:100px; background:linear-gradient(105deg,#fff 0%,#f8f8f5 40%,#c6c4bd 100%); overflow:hidden; }
+.hero-photo { position:absolute; inset:0 0 0 34%; z-index:-2; background-image:url('/images/hero-reference.jpg'); background-size:cover; background-position:center; }
+.hero::before { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,#fffffff7 0%,#fffffff2 27%,#ffffffc9 43%,#ffffff38 65%,#00000005 100%); }
+.hero-inner { width:92%; max-width:1240px; margin:0 auto; padding:65px 0; }
+.hero-copy { max-width:610px; }
+.eyebrow { color:#af7013; text-transform:uppercase; font-size:13px; font-weight:900; letter-spacing:4px; margin:0 0 12px; }
+.hero-mark { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:clamp(25px,3vw,38px); font-weight:1000; letter-spacing:0; text-shadow:1px 2px 0 #efd7a4; color:#0a1430; margin-bottom:24px; }
+.hero-mark::first-letter { color:var(--gold); }
+.hero-mark small { display:block; width:100%; padding-left:46px; margin-top:-6px; font-size:13px; letter-spacing:6px; }
+.hero h1 { font-size:clamp(35px,4.2vw,62px); line-height:1.05; margin:22px 0 12px; letter-spacing:-1px; }
+.hero h1 strong { display:block; margin-top:8px; color:#cf9a43; }
+.tagline { font-size:clamp(19px,2vw,27px); margin:12px 0 28px; }
+.hero-buttons { display:flex; flex-wrap:wrap; align-items:center; gap:18px; }
+.text-link { color:var(--navy); text-decoration:none; font-weight:700; }
+/* Beneficios sobre una franja clara. */
+.benefits { background:#fff; border-bottom:1px solid #e9e9e9; }
+.benefits-inner { max-width:1240px; width:92%; margin:auto; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; padding:22px 0; }
+.benefit { display:flex; align-items:center; gap:12px; padding:5px 10px; border-right:1px solid #ddd; }
+.benefit:last-child { border-right:0; }
+.benefit-icon { width:53px; height:53px; flex-shrink:0; border:1px solid var(--gold); border-radius:50%; display:grid; place-items:center; font-size:24px; color:#b87a13; }
+.benefit b, .benefit small { display:block; }
+.benefit b { font-size:14px; } .benefit small { font-size:12px; color:var(--muted); margin-top:5px; }
+/* Secciones principales. */
+.section { padding:76px 0; scroll-margin-top:110px; }
+.section h2 { margin:0 0 25px; font-size:clamp(28px,3.4vw,45px); letter-spacing:-1px; }
+.services { background:#faf9f7; }
+.service-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:15px; }
+.service-card { position:relative; background:#141414; border-radius:14px; overflow:hidden; min-height:260px; }
+.service-card img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+.service-card::after { content:''; position:absolute; inset:45% 0 0; background:linear-gradient(transparent,#050505e8); }
+.service-name { position:absolute; bottom:0; left:0; right:0; z-index:1; padding:20px 9px; text-align:center; color:white; font-size:14px; font-weight:800; }
+.section-note { color:var(--muted); line-height:1.7; margin-top:22px; }
+/* Ubicación con iframe de Google Maps. */
+.location { background:#fff; }
+.location-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.35fr); gap:22px; }
+.address-card { background:#101a30; color:#fff; border-radius:16px; padding:40px 28px; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; }
+.address-card h3 { font-size:21px; } .address-icon { color:#e3b861; font-size:44px; }
+.address-card address { font-style:normal; line-height:1.8; color:#ececec; margin-bottom:24px; }
+.map-frame { min-height:350px; border-radius:16px; overflow:hidden; box-shadow:0 4px 18px #00000019; }
+.map-frame iframe { width:100%; height:100%; min-height:350px; border:0; display:block; }
+.reviews { text-align:center; background:#f7f5f0; } .reviews .section-note { max-width:610px; margin:auto; }
+.booking { text-align:center; background:#111827; color:white; } .booking h2 { color:#fff; } .booking p:not(.eyebrow) { color:#ddd; }
+.booking-badge { display:inline-block; border:1px solid #ddb05d; padding:13px 22px; color:#f0ce86; margin-top:20px; border-radius:8px; }
+.footer { padding:30px 16px; text-align:center; background:#080d18; color:#fff; font-weight:700; }
+.footer small { display:block; color:#bbb; font-weight:400; margin-top:12px; }
+/* Tabletas y móviles: una columna en mapa y menos tarjetas. */
+@media(max-width:1050px) {
+ .header-inner { flex-wrap:wrap; justify-content:center; padding:13px 0; }
+ .nav { order:3; width:100%; }
+ .hero { min-height:620px; }
+ .service-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+ .benefits-inner { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .benefit:nth-child(2) { border-right:0; }
+}
+@media(max-width:640px) {
+ .header-inner { gap:10px; } .brand { font-size:14px; } .brand-star { font-size:30px; }
+ .brand small { font-size:8px; } .nav { gap:15px; } .nav a { font-size:12px; }
+ .top-booking { padding:12px; font-size:12px; }
+ .hero { min-height:625px; } .hero-photo { inset:0; background-position:center; }
+ .hero::before { background:linear-gradient(90deg,#fffffff5 0%,#ffffffdc 55%,#ffffff8c 100%); }
+ .hero-inner { padding:65px 0; } .hero-copy { max-width:96%; }
+ .hero-mark { font-size:27px; } .hero h1 { font-size:38px; }
+ .benefits-inner { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+ .benefit { padding:8px 0; gap:7px; } .benefit-icon { width:40px; height:40px; font-size:18px; }
+ .benefit b { font-size:11px; } .benefit small { font-size:10px; }
+ .service-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ .service-card { min-height:225px; } .service-name { font-size:12px; }
+ .section { padding:54px 0; scroll-margin-top:170px; }
+ .location-grid { grid-template-columns:1fr; } .map-frame, .map-frame iframe { min-height:310px; }
+}
+@media(max-width:370px) { .nav { gap:9px; } .hero h1 { font-size:32px; } .service-card { min-height:190px; } }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; } }
+
+/* ===========================================================
+   MEJORAS V0.4
+   1) Cabecera compacta y navegación fija sin ocultar títulos.
+   2) Hero equilibrado con foto y degradado gradual.
+   3) Iconografía SVG coherente, sin símbolos de texto.
+   4) Tarjeta de reseñas futuras, sin inventar opiniones.
+   5) Ajustes de legibilidad y respuesta móvil.
+   =========================================================== */
+
+/* Posición de anclas: el scroll-padding evita que los títulos
+   queden debajo de la cabecera al pulsar el menú. */
+html { scroll-padding-top: 115px; }
+.section, .hero { scroll-margin-top: 115px; }
+.header { background: #fff; }
+.header-inner { min-height: 82px; }
+.nav a { padding: 10px 0; }
+.nav a:focus-visible, .gold-button:focus-visible { outline: 3px solid #a87319; outline-offset: 4px; }
+
+/* Hero: el texto permanece dentro de su columna y nunca se corta.
+   La foto se ve desde la derecha, sin un borde blanco brusco. */
+.hero { min-height: 620px; }
+.hero-photo { inset: 0 0 0 24%; background-position: center 48%; }
+.hero::before {
+  background: linear-gradient(90deg,
+    #ffffff 0%, #fffffff9 29%, #ffffffe8 40%,
+    #ffffffb5 52%, #ffffff39 70%, transparent 89%);
+}
+.hero-copy { max-width: 560px; }
+.hero h1 { font-size: clamp(33px, 4vw, 56px); line-height: 1.1; overflow-wrap: normal; }
+.hero h1 strong { margin-top: 5px; }
+.hero-mark { margin-bottom: 18px; }
+.hero-buttons svg { width: 18px; height: 18px; }
+.gold-button { gap: 9px; }
+
+/* Beneficios: iconos accesibles y alineados */
+.benefit-icon svg { width: 25px; height: 25px; }
+.benefit { min-width: 0; }
+
+/* Ubicación y reseñas: títulos bien separados del header. */
+.location, .reviews { position: relative; }
+.location .eyebrow, .reviews .eyebrow { margin-bottom: 17px; }
+.address-icon svg { width: 40px; height: 40px; }
+.review-panel {
+  max-width: 690px; margin: 32px auto 0; padding: 26px 30px;
+  background: #fff; border: 1px solid #eadbc0; border-radius: 16px;
+  display: flex; gap: 18px; align-items: flex-start; text-align: left;
+  box-shadow: 0 12px 32px #101a3010;
+}
+.review-panel-icon { color: #ba8429; width: 52px; height: 52px;
+  border-radius: 50%; display: grid; place-items: center;
+  flex-shrink: 0; background: #fff6e6; }
+.review-panel strong { display: block; font-size: 18px; }
+.review-panel p { margin: 8px 0 6px; color: var(--muted); line-height: 1.55; }
+.review-panel small { color: #737c89; line-height: 1.55; }
+
+@media (max-width: 1050px) {
+  html { scroll-padding-top: 156px; }
+  .section, .hero { scroll-margin-top: 156px; }
+  .header-inner { min-height: 72px; }
+  .nav { order: 3; }
+  .hero-photo { inset: 0 0 0 18%; }
+}
+@media (max-width: 640px) {
+  html { scroll-padding-top: 160px; }
+  .section, .hero { scroll-margin-top: 160px; }
+  .header-inner { padding: 9px 0; gap: 9px; }
+  .nav { gap: 12px; }
+  .nav a { font-size: 12px; padding: 5px 0; }
+  .hero { min-height: 660px; }
+  .hero-photo { inset: 0; background-position: 66% center; }
+  .hero::before { background: linear-gradient(90deg, #fffffff7 0%, #fffffff0 40%, #ffffffe0 69%, #ffffff99 100%); }
+  .hero-copy { max-width: 98%; }
+  .hero h1 { font-size: clamp(30px, 8.4vw, 43px); }
+  .hero-mark { font-size: 25px; }
+  .review-panel { padding: 22px 17px; gap: 12px; }
+  .review-panel-icon { width: 44px; height: 44px; }
+  .review-panel strong { font-size: 16px; }
+  .benefit-icon svg { width: 21px; height: 21px; }
+}
+
+/* ===========================================================
+   THE STARS BARBERSHOP — AJUSTES V0.5
+   Cabecera móvil con menú desplegable accesible; primera pantalla
+   basada en el espacio disponible y no en nombres de teléfonos.
+   El diseño desktop conserva la composición anterior.
+   =========================================================== */
+.mobile-menu-toggle { display:none; }
+@media (max-width: 640px) {
+  /* Header compacto, siempre una sola fila. */
+  html { scroll-padding-top: 70px; }
+  .section, .hero { scroll-margin-top: 70px; }
+  .header-inner { width:94%; min-height:62px; padding:6px 0; flex-wrap:nowrap; justify-content:space-between; }
+  .brand { font-size:clamp(11px,3.6vw,15px); gap:5px; }
+  .brand-star { font-size:clamp(26px,8vw,34px); }
+  .brand small { font-size:8px; letter-spacing:2px; }
+  .header-actions { margin-left:auto; gap:8px; }
+  .top-booking { display:none; }
+  .mobile-menu-toggle { display:flex; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:#fff; color:var(--navy); border:1px solid #ddd0b7; border-radius:9px; font-size:25px; cursor:pointer; }
+  .nav { display:none; position:absolute; top:100%; left:0; right:0; width:100%; padding:10px 5% 17px; flex-direction:column; align-items:stretch; gap:2px; background:white; border-bottom:1px solid #eadcc3; box-shadow:0 12px 16px #0000001a; }
+  .nav.nav-open { display:flex; }
+  .nav a { padding:13px 8px; font-size:15px; }
+  /* La altura disponible ya excluye la cabecera sticky.
+     En teléfonos bajos permitimos scroll en lugar de achicar
+     texto hasta que resulte ilegible. */
+  .mobile-first-screen { min-height:calc(100svh - 62px); display:flex; flex-direction:column; }
+  .hero { flex:1 1 auto; min-height:345px; padding:0; align-items:flex-end; background:#101010; }
+  .hero-photo { inset:0; background-position:58% center; }
+  .hero::before { background:linear-gradient(180deg,#00000008 0%,#00000024 29%,#000000a8 66%,#000000ef 100%); }
+  .hero-inner { width:92%; padding:20px 0 22px; }
+  .hero-copy { max-width:100%; color:white; }
+  .hero .eyebrow { color:#f4cc78; font-size:clamp(10px,2.6vw,12px); margin-bottom:8px; }
+  .hero-mark { color:white; font-size:clamp(20px,5.9vw,27px); margin-bottom:10px; text-shadow:none; }
+  .hero-mark small { padding-left:34px; font-size:clamp(9px,2.5vw,11px); letter-spacing:3px; }
+  .hero h1 { color:white; font-size:clamp(23px,6.4vw,33px); line-height:1.12; margin:10px 0; }
+  .hero h1 strong { color:#ecc06c; margin-top:3px; }
+  .tagline { color:white; font-size:clamp(13px,3.6vw,17px); margin:9px 0 15px; }
+  .hero-buttons { display:block; }
+  .hero-buttons .gold-button { display:flex; width:100%; padding:13px 15px; font-size:14px; }
+  .hero-buttons .text-link { display:none; }
+  /* Beneficios: dos columnas y dos filas, debajo del CTA.
+     Mantener el alto flexible evita el recorte en iOS/Android. */
+  .benefits { flex:0 0 auto; }
+  .benefits-inner { width:96%; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; padding:8px 0; }
+  .benefit { min-width:0; padding:8px 5px; gap:7px; border-bottom:1px solid #ededed; }
+  .benefit:nth-child(2n) { border-right:0; }
+  .benefit:nth-child(n+3) { border-bottom:0; }
+  .benefit-icon { width:34px; height:34px; }
+  .benefit-icon svg { width:18px; height:18px; }
+  .benefit b { font-size:clamp(9px,2.5vw,11px); line-height:1.2; }
+  .benefit small { font-size:clamp(8px,2.2vw,10px); margin-top:2px; }
+}
+/* Alturas muy limitadas: prioridad a lectura y reservas, sin ocultar beneficios. */
+@media (max-width:640px) and (max-height:720px) {
+  .hero { min-height:350px; }
+  .hero-inner { padding:12px 0; }
+  .hero-mark { margin-bottom:5px; }
+  .hero h1 { margin:7px 0; }
+  .tagline { margin:6px 0 11px; }
+  .benefit { padding:5px 4px; }
+}
+@media (max-width:360px) {
+  .brand small { letter-spacing:1px; }
+  .hero h1 { font-size:23px; }
+  .benefit-icon { width:30px; height:30px; }
+}
+
+/* v0.6: El selector EN/ES fue retirado; idioma automático por navegador. */
+
+/* v1.0: CTA adicional exclusivo del menú móvil. */
+.mobile-nav-booking { display:none; }
+@media (max-width:640px) {
+  .nav .mobile-nav-booking { display:block; background:#f2cf7a; border-radius:9px; font-weight:800; color:#111827; text-align:center; margin-top:7px; }
+  /* La cabecera no debe impedir desplazarse por las pantallas de reserva. */
+  .site-wrapper { overflow-y: visible; }
+}
+
+/* v1.1: Entrada discreta al panel de barberos en versión demostrativa. */
+.barber-entry { background:#f3f4f6; padding:16px; text-align:center; }
+.barber-entry button { background:#fff; border:1px solid #c4a364; color:#1a253c; border-radius:8px; padding:12px 20px; font-weight:700; cursor:pointer; }
+
+/* v1.2: acceso Staff integrado en navegación desktop y móvil. */
+.nav .nav-staff { color:#815817; border:1px solid #dec58e; border-radius:8px; padding:10px 16px; white-space:nowrap; }
+.nav .nav-staff:hover, .nav .nav-staff:focus-visible { background:#fff2d6; color:#382a11; }
+@media(max-width:760px) {
+ .nav .nav-staff { display:block; text-align:center; margin:6px 0; padding:12px; }
+}
+
+/* v1.5 — LOGO OFICIAL: preserva exactamente la imagen enviada. */
+.official-logo-header { display:block; width:104px; height:auto; max-height:75px; object-fit:contain; }
+.official-logo-hero { display:block; width:clamp(150px,20vw,255px); max-width:100%; height:auto; object-fit:contain; }
+.official-logo-footer { display:block; width:125px; max-width:100%; height:auto; margin:0 auto 12px; }
+@media(max-width:600px) {
+ .official-logo-header { width:86px; max-height:65px; }
+ .official-logo-hero { width:clamp(110px,31vw,165px); }
+}
+
+/* v2.0: evita el espacio superior excesivo al entrar por #booking. */
+html { scroll-padding-top:86px; }
+#booking { scroll-margin-top:86px; }
+@media (max-width:640px) {html { scroll-padding-top:72px; } #booking { scroll-margin-top:72px; }}

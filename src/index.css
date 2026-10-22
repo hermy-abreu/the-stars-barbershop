@@ -1,0 +1,22 @@
+/** THE STARS BARBERSHOP — src/index.css
+ * Reinicio global y mejoras de accesibilidad. Archivo completo.
+ */
+:root { font-family: Arial, Helvetica, sans-serif; color: #111a31; background: #fff; font-synthesis: none; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; }
+button, select, input { font: inherit; }
+a { -webkit-tap-highlight-color: transparent; }
+a:focus-visible, select:focus-visible { outline: 3px solid #b37a15; outline-offset: 4px; }
+img { display: block; max-width: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* v2.0.1: permitir desplazamiento vertical hasta el final en Staff móvil. */
+html, body, #root { height:auto; min-height:100%; max-height:none; }
+html, body { overflow-x:hidden; overflow-y:auto; }
+#root { overflow-y:visible; }
+
+/* v2.0.4: page scrolling never locked by nested sections. */
+@media screen { html,body,#root {width:100%; max-width:100%; min-height:100%; overflow-x:clip;} html,body { overflow-y:auto!important; height:auto!important; } #root {height:auto!important; min-height:100dvh!important; overflow:visible!important;} }
+
+/* v2.0.5: el desplazamiento principal de Staff lo administra su propia sección. */
+html, body, #root { position:relative; }

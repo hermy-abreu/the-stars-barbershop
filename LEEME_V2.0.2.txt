@@ -1,0 +1,8 @@
+THE STARS BARBERSHOP v2.0.2 — Corrección de paneles móviles
+
+Partiendo de v2.0.1 revisada.
+En móvil: agenda del propietario delante de filtros; listado de barberos delante del formulario; desplazamiento interno táctil en tablas y listas.
+El PDF conserva 4 campos. Las citas existentes del navegador no se borran con la actualización de src.
+Instalar: copiar archivos completos de src a src y contenido de public/images a public/images del proyecto actual; no reemplazar node_modules ni package.json.
+Probar ancho 430px y 320px; comprobar desplazamiento dentro de lista y tabla, luego filtros.
+La información sigue siendo DEMO y local, sin seguridad ni base de datos.

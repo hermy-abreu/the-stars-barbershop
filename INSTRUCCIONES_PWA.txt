@@ -1,0 +1,22 @@
+THE STARS BARBERSHOP — v2.1 PWA DEMO
+
+Esta carpeta es un proyecto Vite independiente, construido desde los archivos v2.0.5.
+No se necesita copiar archivos sueltos; no sustituir su proyecto actual sin respaldo.
+
+EN MAC
+1) Descomprimir ZIP en una carpeta nueva, por ejemplo TheStarsPWA.
+2) VS Code > abrir carpeta nueva.
+3) Terminal: npm install
+4) Terminal: npm run dev
+5) Probar http://localhost:5173/ en la MAC.
+6) Terminal: npm run build (prueba de compilación).
+
+PRUEBA EN CELULAR
+- localhost:5173 solo es la Mac, NO el móvil.
+- Para instalar y usar Service Worker en un móvil se necesita HTTPS válido.
+- Puedes utilizar un servidor HTTPS de prueba/túnel confiable o subir dist a alojamiento temporal HTTPS; evitar publicar datos privados o códigos de inicio de sesión de demostración.
+- Android Chrome: menú > Instalar app / Agregar a pantalla principal (según versión).
+- iPhone Safari: Compartir > Añadir a pantalla de inicio > Abrir como app (según versión).
+- El SW NO guarda citas offline. Reservas y perfiles siguen en localStorage, aislado por navegador/dispositivo. No usar información real.
+- Verificar si desplazamiento de Staff funciona directamente en el móvil; fallo sigue sin resolución comprobada.
+- Las imágenes y textos de dirección son provisionales; validar con el propietario antes de publicar.

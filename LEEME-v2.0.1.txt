@@ -1,0 +1,19 @@
+THE STARS BARBERSHOP — v2.0.1 (REVISIÓN 2)
+================================================
+Paquete completo acumulativo. Incluye los módulos anteriores.
+
+Corrección responsive:
+- Panel propietario con scroll vertical libre en pantallas móviles.
+- Acceso directo a la agenda del negocio o al listado de barberos.
+- Listados de barberos y reportes sin recorte por altura fija.
+- Continúa la solución de agenda móvil del barbero: citas antes del calendario.
+- Sin cambios en los cuatro campos del reporte PDF.
+
+INSTALACIÓN
+1. Guarda una copia de seguridad de tu proyecto.
+2. Copia TODOS los archivos de src/ encima de los src/ de tu proyecto.
+3. Copia public/images sin borrar tus otras imágenes.
+4. npm run dev, después recarga Chrome.
+5. En simulación de iPhone, verifica Agenda y reportes y Administrar barberos.
+
+DATOS SOLO DE DEMOSTRACIÓN. NO UTILIZAR CLIENTES REALES.

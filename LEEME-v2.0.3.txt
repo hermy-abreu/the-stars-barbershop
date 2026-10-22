@@ -1,0 +1,6 @@
+The Stars Barbershop v2.0.3 - correccion de interfaz movil al 100% de zoom.
+La tabla del propietario pasa a tarjetas de cuatro campos en pantallas estrechas.
+El PDF conserva su tabla clasica.
+El modal del barbero permite desplazarse y acceder a los botones.
+Copiar src/ y public/images/ a tu proyecto existente. NO reemplazar package.json ni node_modules.
+Los datos siguen siendo demostrativos en el navegador.
