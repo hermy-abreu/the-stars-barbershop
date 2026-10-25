@@ -115,25 +115,25 @@ export default function App() {
   // Acceso independiente al panel DEMO. No cambia el Home ni las reservas del cliente.
   // Ruta de personal independiente. El enlace Staff conserva el texto en inglés.
   // Esto es navegación de demostración, NO autenticación ni seguridad real.
-  const [barberView, setBarberView] = useState(() => window.location.pathname === '/staff')
+  const [barberView, setBarberView] = useState(() => window.location.pathname === `${import.meta.env.BASE_URL}staff`)
 
   // Sin React Router: usa History API y mantiene actualizada la ruta al volver atrás.
   useEffect(() => {
-    const syncRoute = () => setBarberView(window.location.pathname === '/staff')
+    const syncRoute = () => setBarberView(window.location.pathname === `${import.meta.env.BASE_URL}staff`)
     window.addEventListener('popstate', syncRoute)
     return () => window.removeEventListener('popstate', syncRoute)
   }, [])
 
   function openStaff(event) {
     event.preventDefault()
-    window.history.pushState({}, '', '/staff')
+    window.history.pushState({}, '', `${import.meta.env.BASE_URL}staff`)
     setMenuOpen(false)
     setBarberView(true)
     window.scrollTo(0, 0)
   }
 
   function closeStaff() {
-    window.history.pushState({}, '', '/')
+    window.history.pushState({}, '', import.meta.env.BASE_URL)
     setBarberView(false)
     window.scrollTo(0, 0)
   }
