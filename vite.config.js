@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  esbuild: {
-    jsx: 'automatic',
-  },
+  base: '/the-stars-barbershop/',
+  esbuild: { jsx: 'automatic' },
 })
