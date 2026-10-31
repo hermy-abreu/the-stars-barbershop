@@ -74,14 +74,11 @@ function todayLocal() {
 
 /** Imagen opcional: si el archivo JPG aún no existe, se muestran iniciales. */
 function BarberCard({ barber, selected, onSelect, onProfile, t }) {
-  const [failed, setFailed] = useState(!barber.photo)
   return (
     <label className={`cb-barber ${selected ? 'selected' : ''}`}>
       <input type="radio" name="bookingBarber" checked={selected} onChange={onSelect} />
       <span className="cb-portrait">
-        {failed ? <span aria-label={t.imageFallback}>{barber.name[0]}</span> : (
-          <img src={barber.photo} alt={`${t.imageAlt} ${barber.name}`} onError={() => setFailed(true)} />
-        )}
+        <span aria-hidden="true">{barber.name[0]}</span>
       </span>
       <span className="cb-barber-name">{barber.name}</span>
       <span className="cb-radio-dot" aria-hidden="true" />

@@ -222,3 +222,21 @@
  }
  .barber-area::after { content:""; display:block; height:20px; flex:none; }
 }
+
+
+/* Agenda semanal: horas en filas, siete días en columnas, desplazamiento táctil. */
+.barber-calendar-layout-weekly { grid-template-columns:minmax(0,1.7fr) minmax(285px,.85fr); }
+.barber-week-scroll { width:100%; overflow:auto; max-height:min(72dvh,850px); overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.barber-week-grid { display:grid; grid-template-columns:74px repeat(7,minmax(125px,1fr)); min-width:950px; }
+.barber-week-corner,.barber-week-header { position:sticky; top:0; z-index:3; padding:12px 5px; background:#f4f5f7; border:1px solid #dce1e8; font-weight:700; text-align:center; color:#182438; }
+.barber-week-corner { left:0; z-index:5; }
+.barber-week-header { cursor:pointer; }
+.barber-week-header.selected { background:#e9d5a3; }
+.barber-time-row { display:contents; }
+.barber-hour-label { position:sticky; left:0; z-index:2; min-height:57px; background:#f8fafc; border:1px solid #e4e8ed; font-size:11px; text-align:center; padding:8px 2px; color:#2b3848; }
+.barber-time-cell { min-height:57px; padding:3px; border-right:1px solid #e4e8ed; border-bottom:1px solid #e4e8ed; background:#fff; display:flex; flex-direction:column; gap:3px; }
+.barber-time-appointment { border:0; border-radius:5px; width:100%; min-height:38px; padding:6px 4px; font-size:12px; font-weight:700; text-align:left; background:#c7d9f0; color:#162a42; cursor:pointer; overflow-wrap:anywhere; }
+.barber-time-appointment.walkin { background:#e8ce92; color:#342509; }
+.barber-time-appointment:focus-visible,.barber-week-header:focus-visible { outline:3px solid #b18a37; outline-offset:1px; }
+@media(max-width:950px) { .barber-calendar-layout-weekly { display:flex!important; flex-direction:column!important; } .barber-calendar-layout-weekly .barber-calendar-card { order:0!important; } .barber-calendar-layout-weekly .barber-appointments { order:1!important; } .barber-week-scroll { max-height:65dvh; } .barber-week-grid { min-width:850px; grid-template-columns:65px repeat(7,minmax(112px,1fr)); } }
+@media(max-width:480px) { .barber-week-scroll { max-height:60dvh; } .barber-modal-overlay { overscroll-behavior:contain; } .barber-modal { max-height:calc(100dvh - 20px)!important; } }

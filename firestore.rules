@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny by default. Never open database while client authentication is demo-only.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -31,7 +31,6 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
   const [last,setLast]=useState('')
   const [profileError,setProfileError]=useState('')
   const [profileMessage,setProfileMessage]=useState('')
-  const [photo,setPhoto]=useState('')
   const [temporaryPassword,setTemporaryPassword]=useState('')
   // ID del perfil que se edita; vacío significa creación.
   const [editingId,setEditingId]=useState('')
@@ -71,14 +70,13 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     ?uniqueUsername(validFirst,validLast,editingId):'—'
 
   function resetProfileForm() {
-    setFirst('');setLast('');setPhoto('');setTemporaryPassword('');setEditingId('')
+    setFirst('');setLast('');setTemporaryPassword('');setEditingId('')
     setProfileError('');setProfileMessage('')
   }
   function startEdit(b) {
     const parts=b.name.trim().split(/\s+/)
     setFirst(b.firstName||parts[0]||'')
     setLast(b.lastName||parts.slice(1).join(' ')||'')
-    setPhoto(b.photo||'')
     setEditingId(b.id)
     setTemporaryPassword('')
     setProfileError('');setProfileMessage('')
@@ -93,10 +91,10 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     if(editingId) {
       // No modificamos ID ni usuario: son identificadores estables.
       onBarbersChange(old=>old.map(b=>b.id===editingId
-        ?{...b,name:`${first.trim()} ${last.trim()}`,firstName:first.trim(),lastName:last.trim(),photo}
+        ?{...b,name:`${first.trim()} ${last.trim()}`,firstName:first.trim(),lastName:last.trim()}
         :b))
       setProfileMessage(language==='es'?'Perfil actualizado. El ID y el usuario permanecen iguales.':'Profile updated. ID and username remain unchanged.')
-      setEditingId('');setFirst('');setLast('');setPhoto('');setProfileError('')
+      setEditingId('');setFirst('');setLast('');setProfileError('')
       return
     }
     if(!/^(?:[0-9]{6}|(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])[A-Za-z0-9]{6})$/.test(temporaryPassword)) {
@@ -107,20 +105,12 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     const username=proposedUsername
     // La contraseña la establece el barbero en el portal Staff (demo).
     onBarbersChange(old=>[...old,{id,name:`${first.trim()} ${last.trim()}`,
-      firstName:first.trim(),lastName:last.trim(),username,password:temporaryPassword,active:true,photo}])
+      firstName:first.trim(),lastName:last.trim(),username,password:temporaryPassword,active:true}])
     setProfileMessage((language==='es'?'Perfil creado: ':'Profile created: ')+id+' · '+username)
-    setFirst('');setLast('');setPhoto('');setTemporaryPassword('');setProfileError('')
+    setFirst('');setLast('');setTemporaryPassword('');setProfileError('')
   }
   function toggleBarber(id) {
     onBarbersChange(old=>old.map(b=>b.id===id?{...b,active:b.active===false}:b))
-  }
-  function uploadPhoto(event) {
-    const file=event.target.files?.[0]
-    if(!file) return
-    if(!['image/jpeg','image/png'].includes(file.type)||file.size>1500000){setProfileError(language==='es'?'Usa una foto JPG/PNG de máximo 1.5 MB.':'Use JPG/PNG under 1.5 MB.');return}
-    const reader=new FileReader()
-    reader.onload=()=>setPhoto(String(reader.result))
-    reader.readAsDataURL(file)
   }
   return <section className="owner-dashboard">
     <header className="owner-header print-hide">
@@ -145,14 +135,12 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
       <form className="owner-profile-form" onSubmit={createBarber}>
         <label>{language==='es'?'Nombre':'First name'} *<input value={first} maxLength={70} onChange={e=>setFirst(e.target.value)} required /></label>
         <label>{language==='es'?'Apellido':'Last name'} *<input value={last} maxLength={70} onChange={e=>setLast(e.target.value)} required /></label>
-        <label>{language==='es'?'Fotografía (opcional)':'Photo (optional)'}<input type="file" accept="image/png,image/jpeg" onChange={uploadPhoto} /></label>
         {!editingId && <label>{language==='es'?'Contraseña temporal (6 caracteres)':'Temporary password (6 characters)'} *<input type="password" autoComplete="new-password" maxLength={6} value={temporaryPassword} onChange={e=>setTemporaryPassword(e.target.value)} required /></label>}
         <div className="owner-profile-preview" aria-live="polite">
           <strong>{editingId?(language==='es'?'Editando perfil':'Editing profile'):(language==='es'?'Vista previa automática':'Automatic preview')}</strong>
           <span>ID: {editingId || proposedId}</span>
           <span>{language==='es'?'Usuario':'Username'}: {editingId?(barbers.find(b=>b.id===editingId)?.username||'—'):proposedUsername}</span>
         </div>
-        {photo && <div className="owner-photo-preview"><img src={photo} alt={language==='es'?'Vista previa de fotografía':'Photo preview'}/><button type="button" onClick={()=>setPhoto('')}>{language==='es'?'Quitar fotografía':'Remove photo'}</button></div>}
         <button type="submit" className="owner-create-button">{editingId?(language==='es'?'Guardar cambios':'Save changes'):(language==='es'?'Crear perfil':'Create profile')}</button>
         {editingId && <button type="button" onClick={resetProfileForm}>{language==='es'?'Cancelar edición':'Cancel editing'}</button>}
       </form>
