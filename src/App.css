@@ -273,3 +273,12 @@ html { scroll-padding-top: 115px; }
 html { scroll-padding-top:86px; }
 #booking { scroll-margin-top:86px; }
 @media (max-width:640px) {html { scroll-padding-top:72px; } #booking { scroll-margin-top:72px; }}
+
+/* Optional native PWA installation entry point. */
+.install-invite { max-width:720px; margin:32px auto 16px; padding:25px 18px; text-align:center; border:1px solid #c7a45a; border-radius:14px; background:#111a29; color:#f7f4eb; }
+.install-invite h2 { font-size:18px; margin:0 0 9px; color:#e1b95a; }
+.install-invite p { margin:0 0 16px; line-height:1.45; }
+.install-invite button { border:0; cursor:pointer; border-radius:9px; background:#d5a841; color:#161a21; font-weight:700; padding:12px 30px; min-height:44px; }
+.install-invite .install-instructions { margin-top:17px; padding:14px; border-radius:9px; background:#273247; }
+.install-invite .install-instructions button { background:transparent; border:1px solid #e1b95a; color:#fff; }
+@media(max-width:720px){.install-invite{margin:20px 12px;}}
