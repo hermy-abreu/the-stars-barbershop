@@ -104,6 +104,16 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const ownAppointments = useMemo(() => appointments.filter((a) => a.barberId === account?.id), [appointments, account])
   const appointmentsForDay = useMemo(() => ownAppointments.filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time) || a.id - b.id), [ownAppointments, selectedDay])
   const selectedAppointment = ownAppointments.find(a => a.id === selectedId)
+  const weekDays = useMemo(() => {
+    const anchor = fromIso(isoDate(viewMonth))
+    const mondayOffset = (anchor.getDay() + 6) % 7
+    return Array.from({length:7},(_,i)=>({date:shiftDate(isoDate(anchor),i-mondayOffset)}))
+  },[viewMonth])
+  const halfHours = useMemo(()=>Array.from({length:33},(_,i)=>{
+    const n=360+i*30
+    return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`
+  }),[])
+
   // Outlook: semanas de domingo a sábado, con celdas completas de otros meses.
   const monthStartOffset = viewMonth.getDay()
   const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate()
@@ -226,39 +236,31 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
           <div className="barber-header-actions"><button type="button" onClick={openProfile} aria-label="Editar mi perfil profesional">👤 {language === 'es' ? 'Mi perfil' : 'My profile'}</button><button type="button" onClick={onExit}>{t.back}</button><button type="button" onClick={signOut}>{t.logout}</button></div>
         </header>
         <p className="barber-demo-banner">{t.demo} {t.notSaved}</p>
-        {/* Calendario Outlook: vista del mes completo, sin mini-cuadrícula. */}
-        <div className="barber-calendar-layout">
+        {/* Agenda semanal: nombre completo y detalles al pulsar. */}
+        <div className="barber-calendar-layout barber-calendar-layout-weekly">
           <article className="barber-card barber-calendar-card">
             <div className="barber-month-controls">
-              <button type="button" className="barber-today" onClick={() => {
-                const current = shopToday()
-                setSelectedDay(current)
-                const date = fromIso(current)
-                setViewMonth(new Date(date.getFullYear(), date.getMonth(), 1))
-              }}>{t.today}</button>
+              <button type="button" className="barber-today" onClick={() => { const now=shopToday(); setSelectedDay(now); setViewMonth(fromIso(now)) }}>{t.today}</button>
               <div className="barber-month-navigation">
-                <button type="button" onClick={() => monthMove(-1)} aria-label={t.monthBack}>‹</button>
-                <button type="button" onClick={() => monthMove(1)} aria-label={t.monthNext}>›</button>
+                <button type="button" onClick={() => setViewMonth(d => fromIso(shiftDate(isoDate(d), -7)))} aria-label={language==='es'?'Semana anterior':'Previous week'}>‹</button>
+                <button type="button" onClick={() => setViewMonth(d => fromIso(shiftDate(isoDate(d), 7)))} aria-label={language==='es'?'Semana siguiente':'Next week'}>›</button>
               </div>
-              <h3 className="barber-month-title">{viewMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</h3>
+              <h3 className="barber-month-title">{language==='es'?'Semana del':'Week of'} {weekDays[0].date} — {weekDays[6].date}</h3>
             </div>
-            <div className="barber-calendar-grid" aria-label={t.dashboard}>
-              {t.days.map((day, index) => <div className="barber-weekday" key={`${day}-${index}`}>{day}</div>)}
-              {calendarDays.map(cell => {
-                const count = ownAppointments.filter(a => a.date === cell.date).length
-                return <button key={cell.date} type="button"
-                  className={`barber-day ${cell.outside ? 'outside' : ''} ${cell.date === selectedDay ? 'selected' : ''} ${cell.date === shopToday() ? 'today' : ''}`}
-                  aria-label={`${cell.date}, ${count} ${t.appointments}`}
-                  aria-pressed={cell.date === selectedDay}
-                  onClick={() => {
-                    setSelectedDay(cell.date)
-                    revealList()
-                    if (cell.outside) { const d = fromIso(cell.date); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)) }
-                  }}>
-                  <span className="barber-day-number">{cell.label}</span>
-                  {count > 0 && <span className="barber-day-count">{count}</span>}
-                </button>
-              })}
+            <div className="barber-week-scroll" role="region" tabIndex={0} aria-label={language==='es'?'Agenda semanal desplazable':'Scrollable weekly schedule'}>
+              <div className="barber-week-grid">
+                <div className="barber-week-corner">{language==='es'?'Hora':'Time'}</div>
+                {weekDays.map(day => <button type="button" key={day.date} className={`barber-week-header ${day.date===selectedDay?'selected':''}`} onClick={()=>setSelectedDay(day.date)}>{fromIso(day.date).toLocaleDateString(locale,{weekday:'short',day:'numeric'})}</button>)}
+                {halfHours.map(time => <div className="barber-time-row" key={time}>
+                  <div className="barber-hour-label">{timeLabel(time,language)}</div>
+                  {weekDays.map(day => {
+                    const matches=ownAppointments.filter(a=>a.date===day.date && a.time===time)
+                    return <div key={day.date+time} className="barber-time-cell">
+                      {matches.map(a => <button type="button" key={a.id} className={`barber-time-appointment ${a.walkIn?'walkin':''}`} onClick={()=>{setSelectedDay(day.date);openAppointment(a.id)}}>{a.first} {a.last}</button>)}
+                    </div>
+                  })}
+                </div>)}
+              </div>
             </div>
           </article>
           {/* En desktop esta lista aparece a la derecha; en móvil, debajo. */}
