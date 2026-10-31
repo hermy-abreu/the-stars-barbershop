@@ -112,6 +112,27 @@ export default function App() {
   }, [])
   // Menú móvil accesible; se cierra al seleccionar una sección.
   const [menuOpen, setMenuOpen] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [installHelp, setInstallHelp] = useState(false)
+  const [installed, setInstalled] = useState(() => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
+  useEffect(() => {
+    const onPrompt = event => { event.preventDefault(); setInstallPrompt(event) }
+    const onInstalled = () => { setInstalled(true); setInstallPrompt(null); setInstallHelp(false) }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+  async function requestInstall() {
+    if (installPrompt) {
+      const prompt = installPrompt
+      setInstallPrompt(null)
+      try { await prompt.prompt(); await prompt.userChoice } catch { setInstallHelp(true) }
+    } else { setInstallHelp(true) }
+  }
+
   // Acceso independiente al panel DEMO. No cambia el Home ni las reservas del cliente.
   // Ruta de personal independiente. El enlace Staff conserva el texto en inglés.
   // Esto es navegación de demostración, NO autenticación ni seguridad real.
@@ -261,6 +282,17 @@ export default function App() {
         {/* Formulario de prueba sin backend ni reservas reales. */}
         <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={item=>{ const current=getStored('appointments',appointments); const record={...item,id:Math.max(Date.now(), ...current.map(a=>Number(a.id)||0))+1}; const next=[...current,record]; putStored('appointments',next); setAppointments(next); setLatestBooking(record); return record }} />
       </main>
+      {!installed && <section className="install-invite" aria-label="Install The Stars Barbershop">
+        <h2>THE STARS BARBERSHOP</h2>
+        <p>{language==='es'?'Accede a tus reservas desde la pantalla de inicio.':'Access bookings from your home screen.'}</p>
+        <button type="button" onClick={requestInstall}>Install</button>
+        {installHelp && <div className="install-instructions" role="status">
+          <p>{/iPhone|iPad|iPod/i.test(navigator.userAgent)
+            ? (language==='es'?'En Safari, pulsa Compartir y luego Agregar a pantalla de inicio.':'In Safari, tap Share, then Add to Home Screen.')
+            : (language==='es'?'Abre el menú ⋮ de Chrome y selecciona Instalar aplicación o Agregar a pantalla principal.':'Open Chrome’s ⋮ menu and choose Install app or Add to Home screen.')}</p>
+          <button type="button" onClick={()=>setInstallHelp(false)}>{language==='es'?'Cerrar':'Close'}</button>
+        </div>}
+      </section>}
       <footer className="footer"><img className="official-logo-footer" src="/images/logo-oficial.png" alt="The Stars Barbershop" /> {SHOP.address}<small>© {new Date().getFullYear()} · {t.rights}</small></footer>
     </div>
   )
