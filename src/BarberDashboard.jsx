@@ -99,11 +99,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const currentBarber = barbers.find(b=>b.id===account?.id)
   const [profileDraft,setProfileDraft] = useState(null)
   function openProfile(){setProfileDraft({...currentBarber});setProfileOpen(true)}
-  function uploadProfilePhoto(event){const file=event.target.files?.[0];if(!file)return;
-    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>1100000){alert('Imagen JPG, PNG o WEBP, máximo 1.1 MB para la demo.');return}
-    const reader=new FileReader();reader.onload=()=>setProfileDraft(old=>({...old,photo:String(reader.result)}));reader.readAsDataURL(file)
-  }
-  function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,photo:profileDraft.photo||'',alias:profileDraft.alias||'',phone:formatPhone(profileDraft.phone),instagram:profileDraft.instagram||'',facebook:profileDraft.facebook||'',tiktok:profileDraft.tiktok||'',youtube:profileDraft.youtube||''}:b));setProfileOpen(false)}
+  function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,alias:profileDraft.alias||'',phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
 
   const ownAppointments = useMemo(() => appointments.filter((a) => a.barberId === account?.id), [appointments, account])
   const appointmentsForDay = useMemo(() => ownAppointments.filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time) || a.id - b.id), [ownAppointments, selectedDay])
