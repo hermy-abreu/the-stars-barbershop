@@ -122,3 +122,5 @@
 .cb-search-panel .cb-summary { border-top:1px solid #e4dfd4; padding:14px 0; }
 .cb-search-panel .cb-summary button { margin-right:10px; }
 @media(max-width:560px) { .cb-search-panel { padding:15px; } .cb-booking-modes { gap:8px; } }
+
+.cb-time-selectors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}.cb-time-selectors label{display:flex;flex-direction:column;gap:7px;min-width:0;font-weight:700}.cb-time-selectors select{width:100%;min-width:0;border:1px solid #ccd2db;border-radius:9px;background:#fff;color:#142238;padding:12px;font:inherit}@media(max-width:460px){.cb-time-selectors{gap:7px}.cb-time-selectors select{padding:10px 5px}}
