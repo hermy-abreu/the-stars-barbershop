@@ -15,3 +15,8 @@ for (const field of ['apiKey','authDomain','projectId','appId']) {
 export const app = getApps().length ? getApp() : initializeApp(config)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
+
+// Separate customer session: staff sign-in must not replace a customer's anonymous booking identity.
+export const customerApp = getApps().find(item=>item.name==='customer-booking') || initializeApp(config,'customer-booking')
+export const customerAuth = getAuth(customerApp)
+export const customerDb = getFirestore(customerApp)
