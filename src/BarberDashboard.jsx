@@ -236,10 +236,9 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
 
       <div className="barber-shell">
         <header className="barber-panel-header">
-          <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF</p><h2>{t.dashboard}</h2><p>{account.name} · {account.id}</p></div>
+          <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF</p><h2>{t.dashboard}</h2><p>{currentBarber?.alias || currentBarber?.name || (language==='es'?'Mi agenda':'My schedule')}</p></div>
           <div className="barber-header-actions"><button type="button" onClick={openProfile} aria-label="Editar mi perfil profesional">👤 {language === 'es' ? 'Mi perfil' : 'My profile'}</button><button type="button" onClick={onExit}>{t.back}</button><button type="button" onClick={signOut}>{t.logout}</button></div>
         </header>
-        <p className="barber-demo-banner">{t.demo} {t.notSaved}</p>
         {/* Agenda semanal: nombre completo y detalles al pulsar. */}
         <div className="barber-calendar-layout barber-calendar-layout-weekly">
           <article className="barber-card barber-calendar-card">
