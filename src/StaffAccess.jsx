@@ -72,7 +72,7 @@ export default function StaffAccess({language='es',onExit}) {
       }
     }catch(e){setError(e.message)}
   }
-  if(role==='barber' && user && !loading) return <BarberDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} authenticatedBarber={{id:user.uid,name:barbers.find(b=>b.id===user.uid)?.name||user.email,role:'barber'}} barbers={barbers} setBarbers={async updater=>{try{const updated=updater(barbers).find(b=>b.id===user.uid);if(!updated)throw Error('Perfil no encontrado');await updateDoc(doc(db,'barbers',user.uid),{alias:updated.alias||'',phone:updated.phone||'',photo:updated.photo||'',instagram:updated.instagram||'',facebook:updated.facebook||'',tiktok:updated.tiktok||'',youtube:updated.youtube||''})}catch(err){setError(err.message)}}} appointments={appointments} setAppointments={persistBarberAppointments}/>
+  if(role==='barber' && user && !loading) return <BarberDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} authenticatedBarber={{id:user.uid,name:barbers.find(b=>b.id===user.uid)?.name||user.email,role:'barber'}} barbers={barbers} setBarbers={async updater=>{try{const updated=updater(barbers).find(b=>b.id===user.uid);if(!updated)throw Error('Perfil no encontrado');await updateDoc(doc(db,'barbers',user.uid),{alias:updated.alias||'',phone:updated.phone||'',photo:updated.photo||'',instagram:updated.instagram||'',facebook:updated.facebook||'',tiktok:updated.tiktok||'',youtube:updated.youtube||''})}catch(err){setError(err.message)}}} appointments={appointments} setAppointments={persistBarberAppointments} staffError={error}/>
   async function createBarber(profile){
     if(role!=='owner')throw Error('Acceso restringido')
     const secondary=initializeApp(auth.app.options,'barber-'+Date.now())
