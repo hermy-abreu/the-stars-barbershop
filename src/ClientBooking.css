@@ -113,3 +113,12 @@
  .cb-actions-summary { gap:5px; }
  .cb-actions-summary button { padding:9px 4px; font-size:11px; min-height:50px; }
 }
+
+/* Controles de búsqueda dentro de la sección de reservas aprobada. */
+.cb-booking-modes { display:flex; gap:12px; flex-wrap:wrap; margin:18px 0; }
+.cb-booking-modes button { flex:1 1 180px; }
+.cb-search-panel { background:#fff; border:1px solid #ded8c6; border-radius:12px; padding:24px; margin:18px 0; }
+.cb-search-panel .cb-fields { display:grid; gap:14px; }
+.cb-search-panel .cb-summary { border-top:1px solid #e4dfd4; padding:14px 0; }
+.cb-search-panel .cb-summary button { margin-right:10px; }
+@media(max-width:560px) { .cb-search-panel { padding:15px; } .cb-booking-modes { gap:8px; } }
