@@ -35,7 +35,7 @@ export default function StaffAccess({language='es',onExit}) {
   },[es])
   async function login(event) {
     event.preventDefault();setError('')
-    try { await signInWithEmailAndPassword(auth,email.trim(),password) }
+    try { await signInWithEmailAndPassword(auth,(email.trim().includes('@') ? email.trim() : email.trim().toLowerCase()+'@the-stars-barbershop.firebaseapp.com'),password) }
     catch { setError(es?'Credenciales incorrectas o acceso no disponible.':'Invalid credentials or sign-in unavailable.') }
     finally { setPassword('') }
   }
@@ -45,7 +45,7 @@ export default function StaffAccess({language='es',onExit}) {
     <h2>Staff</h2>
     {loading ? <p>{es?'Verificando acceso…':'Checking access…'}</p>
     : !user ? <form onSubmit={login}>
-      <label>{es?'Correo electrónico':'Email'}<input type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)}/></label>
+      <label>{es?'Usuario o correo':'Username or email'}<input type="text" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)}/></label>
       <label>{es?'Contraseña':'Password'}<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
       <button type="submit" className="barber-gold-button">{es?'Entrar':'Sign in'}</button>
     </form>
