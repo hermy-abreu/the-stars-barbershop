@@ -8,8 +8,8 @@ import { useMemo, useState } from 'react'
 import './OwnerDashboard.css'
 
 const words = {
-  es: { title: 'Panel del propietario', demo: 'DEMOSTRACIÓN — Citas y cuentas ficticias. No hay almacenamiento real.', back: 'Volver a la web', logout:'Cerrar sesión', appointments:'Agenda del negocio', filter:'Barbero', all:'Todos los barberos', period:'Periodo', day:'Diario', week:'Semanal', month:'Mensual', date:'Fecha de referencia', pdf:'Exportar / Guardar como PDF', empty:'No hay citas en el periodo seleccionado.', barber:'Barbero', client:'Nombre y apellido del cliente', when:'Fecha y hora', service:'Servicio', walkin:'Sin cita', rows:'Citas encontradas', notice:'El navegador abrirá la impresión; selecciona «Guardar como PDF».' },
-  en: { title: 'Owner dashboard', demo: 'DEMO — Sample accounts and appointments only. No real storage.', back:'Back to website', logout:'Sign out', appointments:'Business appointments', filter:'Barber', all:'All barbers', period:'Period', day:'Daily', week:'Weekly', month:'Monthly', date:'Reference date', pdf:'Export / Save as PDF', empty:'No appointments in the selected period.', barber:'Barber', client:'Customer full name', when:'Date and time', service:'Service', walkin:'Walk-in', rows:'Matching appointments', notice:'The print dialog will open; choose «Save as PDF».' },
+  es: { title: 'Panel del propietario', demo: 'Citas sincronizadas con Firebase.', back: 'Volver a la web', logout:'Cerrar sesión', appointments:'Agenda del negocio', filter:'Barbero', all:'Todos los barberos', period:'Periodo', day:'Diario', week:'Semanal', month:'Mensual', date:'Fecha de referencia', pdf:'Exportar / Guardar como PDF', empty:'No hay citas en el periodo seleccionado.', barber:'Barbero', client:'Nombre y apellido del cliente', when:'Fecha y hora', service:'Servicio', walkin:'Sin cita', rows:'Citas encontradas', notice:'El navegador abrirá la impresión; selecciona «Guardar como PDF».' },
+  en: { title: 'Owner dashboard', demo: 'Appointments synced with Firebase.', back:'Back to website', logout:'Sign out', appointments:'Business appointments', filter:'Barber', all:'All barbers', period:'Period', day:'Daily', week:'Weekly', month:'Monthly', date:'Reference date', pdf:'Export / Save as PDF', empty:'No appointments in the selected period.', barber:'Barber', client:'Customer full name', when:'Date and time', service:'Service', walkin:'Walk-in', rows:'Matching appointments', notice:'The print dialog will open; choose «Save as PDF».' },
 }
 function todayISO() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
 function parseISO(value) { const [y,m,d]=value.split('-').map(Number); return new Date(y,m-1,d) }
@@ -23,7 +23,7 @@ function isWithinPeriod(value, reference, period) {
   const end=new Date(start.getFullYear(),start.getMonth(),start.getDate()+7)
   return d>=start && d<end
 }
-export default function OwnerDashboard({language='es',onExit,onLogout,appointments=[],barbers=[],onBarbersChange=()=>{}}) {
+export default function OwnerDashboard({language='es',onExit,onLogout,appointments=[],barbers=[],onBarbersChange=()=>{},staffPanel=null}) {
   const t=words[language]||words.en
   const locale=language==='es'?'es-US':'en-US'
   const [tab,setTab]=useState('agenda')
@@ -127,37 +127,8 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
       const target = document.getElementById(tab === 'staff' ? 'owner-profile-list-anchor' : 'owner-report-anchor')
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }}>{tab === 'staff' ? (language === 'es' ? '↓ Ver barberos registrados' : '↓ View registered barbers') : (language === 'es' ? '↓ Ver agenda del negocio' : '↓ View business schedule')}</button>
-    {tab==='staff' ? <section className="owner-profiles print-hide">
-      <h2>{language==='es'?'Perfiles de barberos (demo)':'Barber profiles (demo)'}</h2>
-      <p>{language==='es'?'Los perfiles se guardan solo en este navegador (demo), no se sincronizan entre dispositivos. No ingreses información real.':'Profiles are stored only in this browser (demo), not synced across devices. Do not enter real details.'}</p>
-      <div className="owner-profile-editor">
-      <h3>{editingId?(language==='es'?'Editar perfil':'Edit profile'):(language==='es'?'Crear nuevo barbero':'Create new barber')}</h3>
-      <form className="owner-profile-form" onSubmit={createBarber}>
-        <label>{language==='es'?'Nombre':'First name'} *<input value={first} maxLength={70} onChange={e=>setFirst(e.target.value)} required /></label>
-        <label>{language==='es'?'Apellido':'Last name'} *<input value={last} maxLength={70} onChange={e=>setLast(e.target.value)} required /></label>
-        {!editingId && <label>{language==='es'?'Contraseña temporal (6 caracteres)':'Temporary password (6 characters)'} *<input type="password" autoComplete="new-password" maxLength={6} value={temporaryPassword} onChange={e=>setTemporaryPassword(e.target.value)} required /></label>}
-        <div className="owner-profile-preview" aria-live="polite">
-          <strong>{editingId?(language==='es'?'Editando perfil':'Editing profile'):(language==='es'?'Vista previa automática':'Automatic preview')}</strong>
-          <span>ID: {editingId || proposedId}</span>
-          <span>{language==='es'?'Usuario':'Username'}: {editingId?(barbers.find(b=>b.id===editingId)?.username||'—'):proposedUsername}</span>
-        </div>
-        <button type="submit" className="owner-create-button">{editingId?(language==='es'?'Guardar cambios':'Save changes'):(language==='es'?'Crear perfil':'Create profile')}</button>
-        {editingId && <button type="button" onClick={resetProfileForm}>{language==='es'?'Cancelar edición':'Cancel editing'}</button>}
-      </form>
-      {profileError&&<p role="alert" className="owner-profile-error">{profileError}</p>}
-      {profileMessage&&<p role="status" className="owner-profile-success">{profileMessage}</p>}
-      <p>{language==='es'?'El ID es consecutivo. El propietario asigna una contraseña temporal ficticia al crear el barbero; no existe activación pública en Staff.':'IDs increase globally. The owner assigns a demo temporary password; no public activation form is shown.'}</p>
-      </div>
-      <div className="owner-profile-list" id="owner-profile-list-anchor">
-        {barbers.map(b=><article key={b.id} className="owner-profile-card">
-          {b.photo?<img src={b.photo} alt="" />:<span className="owner-profile-avatar" aria-hidden="true">{b.name.slice(0,1)}</span>}
-          <div><strong>{b.name}</strong><small>{b.id} · @{b.username}</small><small>{!b.password?(language==='es'?'Pendiente de contraseña':'Password pending'):(b.active===false?(language==='es'?'Inactivo':'Inactive'):(language==='es'?'Activo':'Active'))}</small></div>
-          <div className="owner-profile-actions">
-            <button type="button" onClick={()=>startEdit(b)}>{language==='es'?'Editar':'Edit'}</button>
-            <button type="button" onClick={()=>toggleBarber(b.id)}>{b.active===false?(language==='es'?'Activar':'Activate'):(language==='es'?'Desactivar':'Deactivate')}</button>
-          </div>
-        </article>)}
-      </div>
+    {tab==='staff' ? <section className="owner-profiles print-hide" id="owner-profile-list-anchor">
+      {staffPanel || <p>{language==='es'?'Administración de barberos no disponible.':'Barber administration unavailable.'}</p>}
     </section> : <>
     <div className="owner-agenda-content">
     <div className="owner-filters print-hide">
