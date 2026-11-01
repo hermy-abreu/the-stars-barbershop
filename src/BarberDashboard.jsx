@@ -97,6 +97,17 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const currentBarber = barbers.find(b=>b.id===account?.id) || authenticatedBarber
   const [profileDraft,setProfileDraft] = useState(null)
   function openProfile(){setProfileDraft({...currentBarber||{name:account?.name||'',alias:'',phone:''}});setProfileOpen(true)}
+  function uploadProfilePhoto(event){
+    const file=event.target.files?.[0]
+    if(!file)return
+    if(!file.type.startsWith('image/')||file.size>120000){
+      alert(language==='es'?'La fotografía debe ser JPG, PNG o WebP y pesar menos de 120 KB.':'Photo must be JPG, PNG or WebP under 120 KB.')
+      return
+    }
+    const reader=new FileReader()
+    reader.onload=()=>setProfileDraft(old=>({...old,photo:String(reader.result||'')}))
+    reader.readAsDataURL(file)
+  }
   function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,...profileDraft,phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
 
   const ownAppointments = useMemo(() => appointments.filter((a) => a.barberId === account?.id), [appointments, account])
