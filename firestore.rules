@@ -60,6 +60,19 @@ service cloud.firestore {
       allow update: if isOwner() || (isBarber() && request.auth.uid == barberId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alias','phone','photo','instagram','facebook','tiktok','youtube']));
     }
+    // Public occupancy flags contain no customer names, phone numbers or services.
+    match /occupiedSlots/{slot} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isOwner()
+        || (isAnonymous()
+          && exists(/databases/$(database)/documents/appointments/$(slot))
+          && get(/databases/$(database)/documents/appointments/$(slot)).data.get('bookingOwnerUid','') == request.auth.uid)
+        || (isBarber()
+          && exists(/databases/$(database)/documents/appointments/$(slot))
+          && get(/databases/$(database)/documents/appointments/$(slot)).data.barberId == request.auth.uid);
+      allow update, delete: if isOwner();
+    }
     match /appointments/{slot} {
       function ownsBooking() {
         return isAnonymous()
