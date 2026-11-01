@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, getDoc, collection, onSnapshot, query, where, deleteDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, collection, onSnapshot, query, where, deleteDoc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
+import { initializeApp, deleteApp } from 'firebase/app'
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import './BarberDashboard.css'
 import TestDashboard from './TestDashboard'
 import OwnerDashboard from './OwnerDashboard'
@@ -75,7 +77,31 @@ export default function StaffAccess({language='es',onExit}) {
     }catch(e){setError(e.message)}
   }
   if(role==='barber' && user && !loading) return <BarberDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} authenticatedBarber={{id:user.uid,name:barbers.find(b=>b.id===user.uid)?.name||user.email,role:'barber'}} barbers={barbers} setBarbers={()=>{}} appointments={appointments} setAppointments={persistBarberAppointments}/>
-  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} staffPanel={<TestDashboard user={user} role={role} language={language}/>} />
+  async function createBarber(profile){
+    if(role!=='owner')throw Error('Acceso restringido')
+    const secondary=initializeApp(auth.app.options,'barber-'+Date.now())
+    try{
+      const credential=await createUserWithEmailAndPassword(getAuth(secondary),profile.username.toLowerCase()+'@the-stars-barbershop.firebaseapp.com',profile.password)
+      const uid=credential.user.uid
+      const common={name:profile.name,firstName:profile.firstName,lastName:profile.lastName,username:profile.username,active:true,createdAt:serverTimestamp()}
+      await setDoc(doc(db,'staff',uid),{...common,role:'barber'})
+      await setDoc(doc(db,'barbers',uid),{...common,displayId:profile.id})
+    }finally{await deleteApp(secondary)}
+  }
+  async function updateBarber(id,patch){
+    if(role!=='owner')throw Error('Acceso restringido')
+    await updateDoc(doc(db,'barbers',id),patch)
+  }
+  async function toggleBarber(id){
+    if(role!=='owner')throw Error('Acceso restringido')
+    const current=barbers.find(b=>b.id===id)
+    if(!current)throw Error('Barbero no encontrado')
+    const active=current.active===false
+    await updateDoc(doc(db,'barbers',id),{active})
+    await updateDoc(doc(db,'staff',id),{active})
+  }
+  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onToggleBarber={toggleBarber}/>
+
   return <section className="barber-area"><div className="barber-login-card">
     <button type="button" className="barber-simple-link" onClick={onExit}>← {es?'Volver a la web':'Back to website'}</button>
     <img src="/images/logo-oficial.png" className="barber-official-logo" alt="The Stars Barbershop"/>
