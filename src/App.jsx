@@ -103,7 +103,13 @@ export default function App() {
       setBarbers(snapshot.docs.map(item=>({id:item.id,...item.data()})))
     }, error => console.error('No se pudieron cargar los barberos:',error.code))
   }, [])
+  function validBusinessSlot(date,time){
+    if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!/^\\d{2}:\\d{2}$/.test(time))return false
+    const weekday=new Date(date+'T12:00:00').getDay()
+    return weekday!==0&&time>='10:00'&&time<='18:30'&&(time.endsWith(':00')||time.endsWith(':30'))
+  }
   async function createBooking(item) {
+    if(!validBusinessSlot(item.date,item.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
     // Customer identity is anonymous; staff must always use their own signed-in account.
     await auth.authStateReady()
     if(!auth.currentUser) await signInAnonymously(auth)
@@ -131,6 +137,7 @@ export default function App() {
     ).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
   }
   async function changeBooking(booking,next) {
+    if(!validBusinessSlot(next.date,next.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
     await auth.authStateReady()
     if(!auth.currentUser?.isAnonymous||booking.bookingOwnerUid!==auth.currentUser.uid)throw new Error('La sesión no tiene acceso a esta reserva.')
     const oldId=booking.id, newId=booking.barberId+'_'+next.date+'_'+next.time
