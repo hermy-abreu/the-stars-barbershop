@@ -109,6 +109,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   const [time, setTime] = useState('10:00')
   const [service, setService] = useState('')
   const [error, setError] = useState('')
+  const [showBusyModal,setShowBusyModal]=useState(false)
   const [profileToView,setProfileToView] = useState(null)
   const saveLock = useRef(false)
   const [saved,setSaved] = useState(false)
@@ -136,6 +137,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
     if (next > step) {
       const message = validateCurrent()
       if (message) { setError(message); return }
+      if(step===2 && next>step && isKnownOccupied()) {setShowBusyModal(true);return}
     }
     setError('')
     setDirection(next > step ? 'forward' : 'backward')
@@ -161,6 +163,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   }
 
   function reset() {
+    setShowBusyModal(false)
     saveLock.current=false; setSaved(false); setSavedRecord(null); setStep(0); setPhase('idle'); setError('')
     setFirst(''); setLast(''); setPhone(''); setBarber('')
     setDate(''); setTime('10:00'); setService('')
@@ -168,12 +171,13 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
 
   const chosenBarber = visibleBarbers.find((person) => person.id === barber)
   const shopPhone = '570-817-3470'
+  function isKnownOccupied(){return [...appointments,latestBooking].filter(Boolean).some(a=>a.barberId===barber&&a.date===date&&a.time===time)}
   const busyMessage = language==='es' ? `El barbero ${chosenBarber?.name||'seleccionado'} ya tiene una cita agendada para las ${displayTime(time)} del ${date}. Selecciona otro horario. Si tienes alguna inquietud, comunícate con el barbero o con la barbería.` : `${chosenBarber?.name||'The selected barber'} already has an appointment at ${displayTime(time)} on ${date}. Choose a different time. If you have questions, contact the barber or the barbershop.`
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
   async function saveDemoAppointment(){
     if(saved || saveLock.current || !chosenBarber || !date || !isOpenSlot(date,time) || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
-    if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time)) {setError(busyMessage);return}
+    if(isKnownOccupied()) {setShowBusyModal(true);return}
     saveLock.current=true
     try {
       if(typeof onCreateAppointment!=='function') throw new Error('El guardado no está conectado al módulo principal.')
@@ -182,7 +186,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
       setSavedRecord(record)
       setSaved(true)
       setError('')
-    } catch (failure) {saveLock.current=false;const code=failure?.code||'';setError(code==='permission-denied'||code==='already-exists' ? busyMessage : (language==='es'?'No se pudo guardar esta cita. Vuelve a intentarlo.':'Could not save this booking. Please try again.'));console.error(failure)}
+    } catch (failure) {saveLock.current=false;const code=failure?.code||'';if(code==='already-exists'){setStep(2);setShowBusyModal(true)}else{setError(language==='es'?'No se pudo confirmar la cita. Revisa tu conexión o vuelve a intentarlo.':'Could not confirm the booking. Check your connection or try again.')}console.error(failure)}
   }
   async function searchBooking(event){
     event.preventDefault()
@@ -219,6 +223,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   return (
     <section id="booking" ref={bookingRef} className="client-booking section">
       <div className="container cb-container">
+        {showBusyModal && <div className="cb-alert-overlay" role="presentation"><section role="alertdialog" aria-modal="true" aria-labelledby="cb-busy-title" className="cb-alert-dialog"><h3 id="cb-busy-title">{language==='es'?'Horario no disponible':'Time unavailable'}</h3><p>{busyMessage}</p><p>{chosenBarber?.phone && <span>{language==='es'?'Barbero':'Barber'}: <a href={'tel:'+chosenBarber.phone}>{chosenBarber.phone}</a></span>}</p><p>{language==='es'?'Barbería':'Barbershop'}: <a href="tel:5708173470">{shopPhone}</a></p><button type="button" className="cb-next" autoFocus onClick={()=>setShowBusyModal(false)}>{language==='es'?'Elegir otra hora':'Choose another time'}</button></section></div>}
         <p className="cb-eyebrow">THE STARS BARBERSHOP</p>
         <h2>{t.title}</h2>
         {mode==='find' && <div className="cb-search-panel">
