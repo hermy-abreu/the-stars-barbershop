@@ -110,11 +110,30 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
   async function deleteBarber(id) {
     const profile=barbers.find(b=>b.id===id)
     if(!profile)return
-    const message=language==='es'
-      ? `¿Eliminar al barbero "${profile.name}"? Se eliminará su acceso Staff y su perfil. Las citas históricas permanecerán guardadas.`
-      : `Delete barber "${profile.name}"? Staff access and profile will be removed. Historical appointments will remain.`
-    if(!window.confirm(message))return
-    try {await onDeleteBarber(id);setProfileMessage(language==='es'?'Barbero eliminado.':'Barber deleted.');setProfileError('')}
+    const candidates=barbers.filter(b=>b.id!==id&&b.active!==false)
+    if(!candidates.length){
+      setProfileError(language==='es'?'Primero agrega el barbero que recibirá las citas.':'Add the replacement barber before deleting this one.')
+      return
+    }
+    const affected=appointments.filter(a=>a.barberId===id).length
+    const answer=window.prompt(
+      (language==='es'
+        ? `Eliminar "${profile.name}" y transferir sus ${affected} cita(s). Escribe el número del barbero receptor:\n`
+        : `Delete "${profile.name}" and transfer ${affected} appointment(s). Enter the destination barber number:\n`)
+      +candidates.map((b,i)=>`${i+1}. ${b.name} (${b.displayId||b.id})`).join('\n')
+    )
+    if(answer===null)return
+    const chosen=Number(answer.trim())
+    if(!Number.isInteger(chosen)||chosen<1||chosen>candidates.length){
+      setProfileError(language==='es'?'Selecciona un número válido.':'Select a valid number.')
+      return
+    }
+    const target=candidates[chosen-1]
+    const confirmation=language==='es'
+      ? `¿Confirmas transferir las ${affected} citas de "${profile.name}" a "${target.name}" y después eliminar al barbero anterior? Si existen conflictos de horario, se cancelará todo.`
+      : `Transfer ${affected} appointments from "${profile.name}" to "${target.name}" and then delete the former barber? Any time conflicts will cancel the operation.`
+    if(!window.confirm(confirmation))return
+    try {await onDeleteBarber(id,target.id);setProfileMessage(language==='es'?'Citas transferidas y barbero eliminado.':'Appointments transferred and barber deleted.');setProfileError('')}
     catch(err){setProfileError(err.message)}
   }
   return <section className="owner-dashboard">
