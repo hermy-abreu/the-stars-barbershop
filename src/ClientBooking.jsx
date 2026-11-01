@@ -230,6 +230,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
             <p>{a.date} · {a.time} · {a.service}</p>
             <button className="cb-next" type="button" onClick={()=>{setSelectedBooking(a);setDate(a.date);setTime(a.time)}}>{language==='es'?'Modificar cita':'Modify booking'}</button>
           </div>)}
+          {error && <p role="status" className="cb-error">{error}</p>}
           {selectedBooking && <form className="cb-fields" onSubmit={modifyBooking}>
             <h3>{language==='es'?'Modificar cita':'Modify booking'}</h3>
             <label>{t.date}<input type="date" required min={todayLocal()} value={date} onChange={e=>setDate(e.target.value)}/></label>
