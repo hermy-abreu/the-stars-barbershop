@@ -79,7 +79,7 @@ export default function StaffAccess({language='es',onExit}) {
     try{
       const credential=await createUserWithEmailAndPassword(getAuth(secondary),profile.username.toLowerCase()+'@the-stars-barbershop.firebaseapp.com',profile.password)
       const uid=credential.user.uid
-      const common={name:profile.name,firstName:profile.firstName,lastName:profile.lastName,username:profile.username,active:true,createdAt:serverTimestamp()}
+      const common={name:profile.name,firstName:profile.firstName,lastName:profile.lastName,username:profile.username,phone:profile.phone||'',active:true,createdAt:serverTimestamp()}
       await setDoc(doc(db,'staff',uid),{...common,role:'barber'})
       await setDoc(doc(db,'barbers',uid),{...common,displayId:profile.id})
     }finally{await deleteApp(secondary)}
