@@ -40,7 +40,7 @@ function initialAppointments() {
 
 const WORDS = {
   es: {
-    heading: 'Acceso de barberos', demo: 'DEMO: usuarios y citas ficticios. No hay acceso seguro ni almacenamiento real.',
+    heading: 'Acceso de barberos', demo: 'Citas sincronizadas con Firebase.',
     username: 'Usuario', password: 'Contraseña', login: 'Entrar', invalid: 'Usuario o contraseña de demostración incorrectos.',
     dashboard: 'Mi agenda', logout: 'Cerrar sesión', today: 'Hoy', monthBack: 'Mes anterior', monthNext: 'Mes siguiente',
     days: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], appointments: 'Clientes del día', empty: 'No tienes citas para este día.',
@@ -55,7 +55,7 @@ const WORDS = {
     back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: 'La jornada laboral real se configurará con el propietario.',
   },
   en: {
-    heading: 'Barber access', demo: 'DEMO: fictitious accounts and appointments. No secure access or real storage.',
+    heading: 'Barber access', demo: 'Appointments synchronized with Firebase.',
     username: 'Username', password: 'Password', login: 'Sign in', invalid: 'Incorrect demo username or password.',
     dashboard: 'My schedule', logout: 'Sign out', today: 'Today', monthBack: 'Previous month', monthNext: 'Next month',
     days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], appointments: 'Appointments for the day', empty: 'No appointments for this day.',
