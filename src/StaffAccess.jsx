@@ -35,7 +35,7 @@ export default function StaffAccess({language='es',onExit}) {
     ;(async()=>{
       for(const a of appointments){
         if(cancelled)break
-        if(a.walkIn || !/^\\d{2}:(00|30)$/.test(a.time||''))continue
+        if(a.walkIn || !/^[0-9]{2}:(00|30)$/.test(a.time||''))continue
         const slot=String(a.id)
         try{
           const marker=doc(db,'occupiedSlots',slot)
