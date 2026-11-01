@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, onSnapshot, doc, setDoc, serverTimestamp, deleteDoc, query, where } from 'firebase/firestore'
+import { collection, onSnapshot, doc, setDoc, serverTimestamp, deleteDoc, query, where, runTransaction } from 'firebase/firestore'
 import { initializeApp, deleteApp } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { db, auth } from './firebase'
@@ -53,9 +53,13 @@ export default function TestDashboard({user,role,language='es'}) {
   const slot=uid+'_'+date+'_'+time
   setBusy(true);setMessage('')
   try{
-   await setDoc(doc(db,'appointments',slot),{
+   await runTransaction(db,async transaction=>{
+    const target=doc(db,'appointments',slot)
+    if((await transaction.get(target)).exists()) throw new Error('This time is already booked')
+    transaction.set(target,{
     barberId:uid,first:client.trim(),last:surname.trim(),phone:'',
     date,time,service:walkIn?'':service,walkIn,createdAt:serverTimestamp()
+    })
    })
    setClient('');setSurname('');setMessage('Saved in Firestore')
   }catch(err){setMessage('Saving failed: '+err.code)}
