@@ -64,14 +64,17 @@ service cloud.firestore {
     match /occupiedSlots/{slot} {
       allow get: if true;
       allow list: if false;
-      allow create: if isOwner()
+      allow create: if request.resource.data.keys().hasOnly(['occupied'])
+        && request.resource.data.occupied == true
+        && (isOwner()
         || (isAnonymous()
           && exists(/databases/$(database)/documents/appointments/$(slot))
           && get(/databases/$(database)/documents/appointments/$(slot)).data.get('bookingOwnerUid','') == request.auth.uid)
         || (isBarber()
           && exists(/databases/$(database)/documents/appointments/$(slot))
-          && get(/databases/$(database)/documents/appointments/$(slot)).data.barberId == request.auth.uid);
-      allow update, delete: if isOwner();
+          && get(/databases/$(database)/documents/appointments/$(slot)).data.barberId == request.auth.uid));
+      allow update: if false;
+      allow delete: if isOwner() || (isAnonymous() && !exists(/databases/$(database)/documents/appointments/$(slot)));
     }
     match /appointments/{slot} {
       function ownsBooking() {
