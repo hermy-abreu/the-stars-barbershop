@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
 import StaffAccess from './StaffAccess'
-import { collection, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, onSnapshot, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
 import { auth, db } from './firebase'
 
@@ -108,10 +108,14 @@ export default function App() {
     await auth.authStateReady()
     if(!auth.currentUser) await signInAnonymously(auth)
     const slot = item.barberId+'_'+item.date+'_'+item.time
-    await setDoc(doc(db,'appointments',slot),{
-      barberId:item.barberId,first:item.first,last:item.last,
-      phone:item.phone||'',date:item.date,time:item.time,
-      service:item.service,walkIn:false,createdAt:serverTimestamp()
+    await runTransaction(db, async transaction => {
+      const target = doc(db,'appointments',slot)
+      if ((await transaction.get(target)).exists()) throw new Error('Horario ocupado')
+      transaction.set(target,{
+        barberId:item.barberId,first:item.first,last:item.last,
+        phone:item.phone||'',date:item.date,time:item.time,
+        service:item.service,walkIn:false,createdAt:serverTimestamp()
+      })
     })
     const record={...item,id:slot}
     setLatestBooking(record)
