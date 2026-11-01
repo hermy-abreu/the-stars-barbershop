@@ -218,7 +218,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         <h2>{t.title}</h2>
         <p className="cb-demo" role="note">{t.demo}</p>
         {mode==='find' && <div className="cb-search-panel">
-          <button type="button" className="cb-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar cita':'Add booking'}</button>
+          <button type="button" className="cb-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar':'Add'}</button>
           <form className="cb-fields" onSubmit={searchBooking}>
             <label>{t.first} *<input value={first} autoComplete="given-name" onChange={e=>setFirst(e.target.value)}/></label>
             <label>{t.last} *<input value={last} autoComplete="family-name" onChange={e=>setLast(e.target.value)}/></label>
@@ -328,8 +328,8 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         <div className={`cb-actions ${step === 4 ? 'cb-actions-summary' : ''}`}>
           {step > 0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={() => navigate(step - 1)}>← {t.back}</button>}
           {step < 4 ? <>
-            <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{step===0?(language==='es'?'Agregar cita':'Add booking'):t.next} →</button>
-            {step===0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Buscar cita':'Find booking'}</button>}
+            <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{step===0?(language==='es'?'Agregar':'Add'):t.next} →</button>
+            {step===0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Modificar':'Modify'}</button>}
           </> : <>
             <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
             <button type="button" className="cb-back cb-restart" onClick={reset}>{t.restart} ↻</button>
