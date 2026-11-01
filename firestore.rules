@@ -36,8 +36,8 @@ service cloud.firestore {
       && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
       && request.resource.data.time is string
       && request.resource.data.time.matches('^[0-9]{2}:[0-9]{2}$')
-      && request.resource.data.service is string
-      && request.resource.data.service.size() <= 100
+      && request.resource.data['service'] is string
+      && request.resource.data['service'].size() <= 100
       && request.resource.data.walkIn is bool
       && request.resource.data.createdAt == request.time;
     }
