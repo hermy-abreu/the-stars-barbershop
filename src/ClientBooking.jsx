@@ -17,10 +17,10 @@ const DEMO_TIMES = Array.from({length: 33}, (_, i) => { const minutes=6*60+i*30;
 
 const i18n = {
   es: {
-    title: 'Reserva tu próxima cita', demo: 'DEMOSTRACIÓN LOCAL: SIN RESERVAS REALES NI SERVIDOR',
+    title: 'Reserva tu próxima cita', demo: 'RESERVAS CONECTADAS A FIRESTORE',
     steps: ['Tus datos', 'Barbero', 'Fecha y hora', 'Servicio', 'Resumen'],
     next: 'Siguiente', back: 'Anterior', restart: 'Comenzar de nuevo',
-    first: 'Nombre', last: 'Apellido', phone: 'Número de celular',
+    first: 'Nombre', last: 'Apellido', phone: 'Número de teléfono (opcional)',
     help: 'Estos datos se usarán para identificar tu reserva cuando el sistema esté activo.',
     barberHelp: 'Selecciona uno de los perfiles activos de demostración.',
     date: 'Fecha', time: 'Horario de ejemplo', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
@@ -38,14 +38,14 @@ const i18n = {
     barberError: 'Selecciona un barbero.', timeError: 'Selecciona un horario de ejemplo.',
     serviceError: 'Selecciona un servicio.',
     client: 'Cliente', barber: 'Barbero', service: 'Servicio',
-    confirm: 'Confirmar cita', confirmed: '¡Tu cita ha sido confirmada!', warning: 'Esta es una demostración local, no una reserva real.',
+    confirm: 'Confirmar cita', confirmed: '¡Tu cita ha sido confirmada!', warning: 'Tu cita se guardará en Firestore al confirmar.',
     imageAlt: 'Fotografía de ejemplo de', imageFallback: 'Imagen de ejemplo no disponible',
   },
   en: {
-    title: 'Book your next appointment', demo: 'LOCAL DEMO: NO REAL BOOKINGS OR SERVER',
+    title: 'Book your next appointment', demo: 'BOOKINGS SAVED TO FIRESTORE',
     steps: ['Your details', 'Barber', 'Date & time', 'Service', 'Summary'],
     next: 'Next', back: 'Back', restart: 'Start again',
-    first: 'First name', last: 'Last name', phone: 'Mobile number',
+    first: 'First name', last: 'Last name', phone: 'Phone number (optional)',
     help: 'These details will identify your booking when the system goes live.',
     barberHelp: 'Choose an active demo barber profile.',
     date: 'Date', time: 'Sample time', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
@@ -62,7 +62,7 @@ const i18n = {
     barberError: 'Choose a barber.', timeError: 'Choose a sample time.',
     serviceError: 'Choose a service.',
     client: 'Customer', barber: 'Barber', service: 'Service',
-    confirm: 'Confirm appointment', confirmed: 'Your appointment has been confirmed!', warning: 'This is a local demo, not a real booking.',
+    confirm: 'Confirm appointment', confirmed: 'Your appointment has been confirmed!', warning: 'Your booking is saved in Firestore after confirmation.',
     imageAlt: 'Sample photograph of', imageFallback: 'Sample image unavailable',
   },
 }
@@ -111,9 +111,9 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   // Se valida solo la pantalla actual; nunca se envía información a un servidor.
   function validateCurrent() {
     if (step === 0) {
-      if (!first.trim() || !last.trim() || !phone.trim()) return t.required
+      if (!first.trim() || !last.trim()) return t.required
       const digits = phone.replace(/\D/g, '')
-      if (digits.length !== 10) return t.phoneError
+      if (digits.length !== 0 && digits.length !== 10) return t.phoneError
     }
     if (step === 1 && !barber) return t.barberError
     if (step === 2) {
@@ -162,13 +162,13 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   const chosenBarber = visibleBarbers.find((person) => person.id === barber)
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
-  function saveDemoAppointment(){
-    if(saved || saveLock.current || !chosenBarber || !date || !time || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
+  async function saveDemoAppointment(){
+    if(saved || saveLock.current || !chosenBarber || !date || !time || !service || !first.trim() || !last.trim() || (phone.trim() && phone.replace(/\D/g,'').length!==10)) return
     if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time && !a.walkIn)) {setError(language==='es'?'Horario ya ocupado para este barbero.':'Time already reserved for this barber.');return}
     saveLock.current=true
     try {
       if(typeof onCreateAppointment!=='function') throw new Error('El guardado no está conectado al módulo principal.')
-      const record=onCreateAppointment({barberId:barber,first:first.trim(),last:last.trim(),phone:formatPhone(phone),date,time,service:i18n.en.names[service],walkIn:false})
+      const record=await onCreateAppointment({barberId:barber,first:first.trim(),last:last.trim(),phone:formatPhone(phone),date,time,service:i18n.en.names[service],walkIn:false})
       if(!record?.id) throw new Error('No se confirmó el almacenamiento de la cita.')
       setSavedRecord(record)
       setSaved(true)
@@ -199,7 +199,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
               <div className="cb-fields">
                 <label>{t.first} *<input value={first} autoComplete="given-name" maxLength={80} onChange={(e) => { setFirst(e.target.value); setError('') }} /></label>
                 <label>{t.last} *<input value={last} autoComplete="family-name" maxLength={80} onChange={(e) => { setLast(e.target.value); setError('') }} /></label>
-                <label>{t.phone} *<input type="tel" value={phone} autoComplete="tel" inputMode="tel" maxLength={14} placeholder="Ej. (570) 555-0100" onChange={(e) => { setPhone(formatPhone(e.target.value)); setError('') }} /></label>
+                <label>{t.phone}<input type="tel" value={phone} autoComplete="tel" inputMode="tel" maxLength={14} placeholder="Ej. (570) 555-0100" onChange={(e) => { setPhone(formatPhone(e.target.value)); setError('') }} /></label>
                 <p className="cb-help">{t.help}</p>
               </div>
             )}
@@ -248,7 +248,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
                   <div><dt>{t.time}</dt><dd>{time}</dd></div>
                   <div><dt>{t.service}</dt><dd>{t.names[service]}</dd></div>
                 </dl>
-                <p className="cb-warning">{saved ? t.confirmed + ' ' + (language==='es'?'(Demostración local, no es una reserva real).':'(Local demo, not a real booking).') : t.warning}</p>
+                <p className="cb-warning">{saved ? t.confirmed + ' ' + (language==='es'?'(Reserva guardada en Firestore).':'(Saved in Firestore).') : t.warning}</p>
                 {saved && savedRecord && <p role="status" className="cb-warning"><strong>{language==='es'?'Reserva de prueba registrada':'Demo booking registered'} · #{savedRecord.id}</strong><br/>{chosenBarber?.name} · {savedRecord.date} · {savedRecord.time}<br/>{language==='es'?'Consulta esa misma fecha en Staff y en el panel del propietario.':'Check this date in Staff and the owner dashboard.'}</p>}
 
               </div>
@@ -269,7 +269,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         <div className={`cb-actions ${step === 4 ? 'cb-actions-summary' : ''}`}>
           {step > 0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={() => navigate(step - 1)}>← {t.back}</button>}
           {step < 4 ? <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{t.next} →</button> : <>
-            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
+            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || (phone.trim() && phone.replace(/\D/g,'').length!==10) || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
             <button type="button" className="cb-back cb-restart" onClick={reset}>{t.restart} ↻</button>
           </>}
         </div>
