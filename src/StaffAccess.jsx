@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, collection, onSnapshot, query, where, deleteDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './firebase'
 import './BarberDashboard.css'
 import TestDashboard from './TestDashboard'
 import OwnerDashboard from './OwnerDashboard'
+import BarberDashboard from './BarberDashboard'
 
 // The legacy demo dashboards are intentionally not exposed here.
 // Only server-authorized roles may be used when real dashboards are connected.
@@ -19,9 +20,10 @@ export default function StaffAccess({language='es',onExit}) {
   const [barbers,setBarbers]=useState([])
   const [appointments,setAppointments]=useState([])
   useEffect(()=>{
-    if(role!=='owner'||!user||user.isAnonymous)return
+    if(!role||!user||user.isAnonymous)return
     const stopBarbers=onSnapshot(collection(db,'barbers'),snap=>setBarbers(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
-    const stopBookings=onSnapshot(collection(db,'appointments'),snap=>setAppointments(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
+    const source=role==='owner'?collection(db,'appointments'):query(collection(db,'appointments'),where('barberId','==',user.uid))
+    const stopBookings=onSnapshot(source,snap=>setAppointments(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
     return ()=>{stopBarbers();stopBookings()}
   },[role,user])
   useEffect(()=>{
@@ -48,6 +50,31 @@ export default function StaffAccess({language='es',onExit}) {
     catch { setError(es?'Credenciales incorrectas o acceso no disponible.':'Invalid credentials or sign-in unavailable.') }
     finally { setPassword('') }
   }
+  async function persistBarberAppointments(updater){
+    if(role!=='barber'||!user) return
+    const next=updater(appointments)
+    const previous=new Map(appointments.map(a=>[a.id,a]))
+    const current=new Map(next.map(a=>[a.id,a]))
+    try {
+      for(const [id,a] of current){
+        const before=previous.get(id)
+        if(!before){
+          const slot=user.uid+'_'+a.date+'_'+a.time
+          await runTransaction(db,async tx=>{
+            const target=doc(db,'appointments',slot)
+            if((await tx.get(target)).exists())throw Error('El horario está ocupado')
+            tx.set(target,{barberId:user.uid,first:a.first,last:a.last,phone:a.phone||'',date:a.date,time:a.time,service:a.service||'',walkIn:!!a.walkIn,createdAt:serverTimestamp()})
+          })
+        } else if(before.date!==a.date||before.time!==a.time){
+          throw Error('El cambio de fecha y hora requiere habilitar las reglas de modificación.')
+        }
+      }
+      for(const [id] of previous){
+        if(!current.has(id))await deleteDoc(doc(db,'appointments',String(id)))
+      }
+    }catch(e){setError(e.message)}
+  }
+  if(role==='barber' && user && !loading) return <BarberDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} authenticatedBarber={{id:user.uid,name:barbers.find(b=>b.id===user.uid)?.name||user.email,role:'barber'}} barbers={barbers} setBarbers={()=>{}} appointments={appointments} setAppointments={persistBarberAppointments}/>
   if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} staffPanel={<TestDashboard user={user} role={role} language={language}/>} />
   return <section className="barber-area"><div className="barber-login-card">
     <button type="button" className="barber-simple-link" onClick={onExit}>← {es?'Volver a la web':'Back to website'}</button>
