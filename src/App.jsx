@@ -144,7 +144,7 @@ export default function App() {
       if(oldId!==newId){
         const destination=doc(db,'appointments',newId)
         if((await tx.get(destination)).exists())throw new Error('Ese horario ya está ocupado.')
-        tx.set(destination,{...snap.data(),date:next.date,time:next.time})
+        tx.set(destination,{...snap.data(),date:next.date,time:next.time,createdAt:serverTimestamp()})
         tx.delete(original)
       }else{
         throw new Error('Selecciona una fecha u hora diferente.')
