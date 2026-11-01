@@ -104,7 +104,7 @@ export default function App() {
     }, error => console.error('No se pudieron cargar los barberos:',error.code))
   }, [])
   function validBusinessSlot(date,time){
-    if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!/^\\d{2}:\\d{2}$/.test(time))return false
+    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!/^[0-9]{2}:[0-9]{2}$/.test(time))return false
     const weekday=new Date(date+'T12:00:00').getDay()
     return weekday!==0&&time>='10:00'&&time<='18:30'&&(time.endsWith(':00')||time.endsWith(':30'))
   }
