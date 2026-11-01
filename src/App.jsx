@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
 import StaffAccess from './StaffAccess'
-import { collection, onSnapshot, doc, runTransaction, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
+import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
 import { auth, db } from './firebase'
 
@@ -109,14 +109,11 @@ export default function App() {
     if(!auth.currentUser) await signInAnonymously(auth)
     if(!auth.currentUser.isAnonymous) throw new Error('Utiliza una sesión de cliente para reservar.')
     const slot = item.barberId+'_'+item.date+'_'+item.time
-    await runTransaction(db, async transaction => {
-      const target = doc(db,'appointments',slot)
-      if ((await transaction.get(target)).exists()) throw new Error('Horario ocupado')
-      transaction.set(target,{
-        barberId:item.barberId,first:item.first,last:item.last,
-        phone:item.phone||'',date:item.date,time:item.time,
-        service:item.service,walkIn:false,bookingOwnerUid:auth.currentUser.uid,createdAt:serverTimestamp()
-      })
+    // Firestore permits CREATE on a free slot and denies UPDATE on an occupied one.
+    await setDoc(doc(db,'appointments',slot),{
+      barberId:item.barberId,first:item.first,last:item.last,
+      phone:item.phone||'',date:item.date,time:item.time,
+      service:item.service,walkIn:false,bookingOwnerUid:auth.currentUser.uid,createdAt:serverTimestamp()
     })
     const record={...item,id:slot}
     setLatestBooking(record)
@@ -143,7 +140,6 @@ export default function App() {
       if(!snap.exists()||snap.data().bookingOwnerUid!==auth.currentUser.uid)throw new Error('La cita no está disponible.')
       if(oldId!==newId){
         const destination=doc(db,'appointments',newId)
-        if((await tx.get(destination)).exists())throw new Error('Ese horario ya está ocupado.')
         tx.set(destination,{...snap.data(),date:next.date,time:next.time,createdAt:serverTimestamp()})
         tx.delete(original)
       }else{
