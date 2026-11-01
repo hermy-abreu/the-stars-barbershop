@@ -23,7 +23,7 @@ function isWithinPeriod(value, reference, period) {
   const end=new Date(start.getFullYear(),start.getMonth(),start.getDate()+7)
   return d>=start && d<end
 }
-export default function OwnerDashboard({language='es',onExit,onLogout,appointments=[],barbers=[],onCreateBarber=async()=>{},onUpdateBarber=async()=>{},onToggleBarber=async()=>{}}) {
+export default function OwnerDashboard({language='es',onExit,onLogout,appointments=[],barbers=[],onCreateBarber=async()=>{},onUpdateBarber=async()=>{},onDeleteBarber=async()=>{}}) {
   const t=words[language]||words.en
   const locale=language==='es'?'es-US':'en-US'
   const [tab,setTab]=useState('agenda')
@@ -107,8 +107,15 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     setProfileMessage((language==='es'?'Perfil creado: ':'Profile created: ')+id+' · '+username)
     setFirst('');setLast('');setTemporaryPassword('');setProfileError('')
   }
-  async function toggleBarber(id) {
-    try {await onToggleBarber(id)}catch(err){setProfileError(err.message)}
+  async function deleteBarber(id) {
+    const profile=barbers.find(b=>b.id===id)
+    if(!profile)return
+    const message=language==='es'
+      ? `¿Eliminar al barbero "${profile.name}"? Se eliminará su acceso Staff y su perfil. Las citas históricas permanecerán guardadas.`
+      : `Delete barber "${profile.name}"? Staff access and profile will be removed. Historical appointments will remain.`
+    if(!window.confirm(message))return
+    try {await onDeleteBarber(id);setProfileMessage(language==='es'?'Barbero eliminado.':'Barber deleted.');setProfileError('')}
+    catch(err){setProfileError(err.message)}
   }
   return <section className="owner-dashboard">
     <header className="owner-header print-hide">
@@ -152,7 +159,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
           <div><strong>{b.name}</strong><small>{b.displayId||b.id} · @{b.username}</small><small>{b.active===false?(language==='es'?'Inactivo':'Inactive'):(language==='es'?'Activo':'Active')}</small></div>
           <div className="owner-profile-actions">
             <button type="button" onClick={()=>startEdit(b)}>{language==='es'?'Editar':'Edit'}</button>
-            <button type="button" onClick={()=>toggleBarber(b.id)}>{b.active===false?(language==='es'?'Activar':'Activate'):(language==='es'?'Desactivar':'Deactivate')}</button>
+            <button type="button" onClick={()=>deleteBarber(b.id)}>{language==='es'?'Eliminar':'Delete'}</button>
           </div>
         </article>)}
       </div>
