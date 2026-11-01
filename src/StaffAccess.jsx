@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, getDoc, collection, onSnapshot, query, where, deleteDoc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, onSnapshot, getDocs, query, where, deleteDoc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
 import { initializeApp, deleteApp } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
@@ -92,14 +92,41 @@ export default function StaffAccess({language='es',onExit}) {
     if(role!=='owner')throw Error('Acceso restringido')
     await updateDoc(doc(db,'barbers',id),patch)
   }
-  async function deleteBarber(id){
+  async function deleteBarber(id,destinationId){
     if(role!=='owner')throw Error('Acceso restringido')
-    const target=barbers.find(b=>b.id===id)
-    if(!target)throw Error('Barbero no encontrado')
-    // Revoke authorization first; Firebase Auth credentials cannot be deleted
-    // client-side for another user. The remaining Auth identity cannot log into Staff.
-    await deleteDoc(doc(db,'staff',id))
-    await deleteDoc(doc(db,'barbers',id))
+    const source=barbers.find(b=>b.id===id)
+    const destination=barbers.find(b=>b.id===destinationId&&b.active!==false)
+    if(!source||!destination||id===destinationId)throw Error('Selecciona un barbero receptor válido.')
+    const snapshot=await getDocs(query(collection(db,'appointments'),where('barberId','==',id)))
+    const entries=snapshot.docs
+    // Firestore transactions have finite write limits. Never delete an account
+    // when its entire appointment history cannot be transferred atomically.
+    if(entries.length>180)throw Error('Demasiadas citas para trasladar en una sola operación segura. No se eliminó nada.')
+    await runTransaction(db,async tx=>{
+      const sourceRef=doc(db,'barbers',id)
+      const destRef=doc(db,'barbers',destinationId)
+      const sourceStaff=doc(db,'staff',id)
+      const sourceSnap=await tx.get(sourceRef)
+      const destSnap=await tx.get(destRef)
+      if(!sourceSnap.exists()||!destSnap.exists()||destSnap.data().active===false)throw Error('Los perfiles han cambiado. Actualiza la página.')
+      const targetRefs=entries.map(entry=>doc(db,'appointments',destinationId+'_'+entry.data().date+'_'+entry.data().time))
+      const existing=await Promise.all(targetRefs.map(ref=>tx.get(ref)))
+      if(existing.some(s=>s.exists()))throw Error('El nuevo barbero ya tiene una cita en uno de esos horarios. No se transfirió ni eliminó nada.')
+      for(let i=0;i<entries.length;i++){
+        const appointment=entries[i].data()
+        tx.set(targetRefs[i],{
+          barberId:destinationId,first:appointment.first,last:appointment.last,
+          phone:appointment.phone||'',date:appointment.date,time:appointment.time,
+          service:appointment.service||'',walkIn:!!appointment.walkIn,
+          createdAt:serverTimestamp()
+        })
+        tx.delete(entries[i].ref)
+      }
+      tx.delete(sourceStaff)
+      tx.delete(sourceRef)
+    })
+    // The former Firebase Authentication identity remains disabled for Staff
+    // through removal of its staff authorization document.
   }
   if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onDeleteBarber={deleteBarber}/>
 
