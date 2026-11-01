@@ -1,9 +1,5 @@
 /** Almacenamiento local de prueba. Nunca es un backend ni autentica usuarios. */
-export const STARTER_BARBERS = [
- {id:'HA-001',name:'Hermy Abreu',username:'hermy',password:'Ab1234',active:true,alias:'',phone:''},
- {id:'AH-002',name:'Alex Hernández',username:'alex',password:'123456',active:true,alias:'',phone:''},
- {id:'MR-003',name:'Miguel Rodríguez',username:'miguel',password:'Mr1234',active:true,alias:'',phone:''},
-]
+export const STARTER_BARBERS = []
 export function getStored(key,fallback) {
  try {const raw=localStorage.getItem('stars-demo-v18-'+key); const value=raw ? JSON.parse(raw) : fallback; return Array.isArray(value)?value:fallback} catch{return fallback}
 }
