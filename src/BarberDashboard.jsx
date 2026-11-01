@@ -118,10 +118,19 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     const mondayOffset = (anchor.getDay() + 6) % 7
     return Array.from({length:7},(_,i)=>({date:shiftDate(isoDate(anchor),i-mondayOffset)}))
   },[viewMonth])
-  const halfHours = useMemo(()=>Array.from({length:19},(_,i)=>{
-    const n=600+i*30
-    return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`
-  }),[])
+  const halfHours = useMemo(()=>{
+    const weekStart=weekDays[0].date, weekEnd=weekDays[6].date
+    const outsideHours=ownAppointments.filter(a=>a.walkIn&&a.date>=weekStart&&a.date<=weekEnd&&/^\\d{2}:\\d{2}$/.test(a.time||'')).map(a=>{
+      const [hour,minute]=a.time.split(':').map(Number)
+      return hour*60+Math.floor(minute/30)*30
+    })
+    const first=Math.max(0,Math.min(600,...outsideHours))
+    const last=Math.min(1410,Math.max(1140,...outsideHours))
+    return Array.from({length:(last-first)/30+1},(_,i)=>{
+      const n=first+i*30
+      return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`
+    })
+  },[ownAppointments,weekDays])
 
   // Outlook: semanas de domingo a sábado, con celdas completas de otros meses.
   const monthStartOffset = viewMonth.getDay()
@@ -257,9 +266,9 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
                 {halfHours.map(time => <div className="barber-time-row" key={time}>
                   <div className="barber-hour-label">{timeLabel(time,language)}</div>
                   {weekDays.map(day => {
-                    const matches=ownAppointments.filter(a=>a.date===day.date && a.time===time)
+                    const matches=ownAppointments.filter(a=>a.date===day.date && (a.walkIn ? (()=>{const [h,m]=a.time.split(':').map(Number);return `${String(h).padStart(2,'0')}:${m<30?'00':'30'}`===time})() : a.time===time))
                     return <div key={day.date+time} className="barber-time-cell">
-                      {matches.map(a => <button type="button" key={a.id} className={`barber-time-appointment ${a.walkIn?'walkin':''}`} onClick={()=>{setSelectedDay(day.date);openAppointment(a.id)}}>{a.first} {a.last}</button>)}
+                      {matches.map(a => <button type="button" key={a.id} className={`barber-time-appointment ${a.walkIn?'walkin':''}`} onClick={()=>{setSelectedDay(day.date);openAppointment(a.id)}} title={`${timeLabel(a.time,language)} · ${a.first} ${a.last}`}>{a.walkIn?`${timeLabel(a.time,language)} · `:''}{a.first} {a.last}</button>)}
                     </div>
                   })}
                 </div>)}
@@ -276,7 +285,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
                 <time>{timeLabel(a.time, language)}</time><span><strong>{a.first} {a.last}</strong><small>{a.walkIn ? t.walkinType : t.reserved}{a.phone ? ` · ${a.phone}` : ''}</small></span><span className="barber-arrow">›</span>
               </button>
             </li>)}</ul> : <p className="barber-empty">{t.empty}</p>}
-            <p className="barber-small-note">{t.noWorkingSchedule}</p>
+
           </article>
         </div>
       </div>
