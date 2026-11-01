@@ -83,7 +83,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const appointmentListRef = useRef(null)
   function revealList(){ if(window.matchMedia('(max-width:950px)').matches) requestAnimationFrame(()=>appointmentListRef.current?.scrollIntoView({behavior:'smooth',block:'start'})) }
   const [selectedDay, setSelectedDay] = useState(() => isoDate(new Date()))
-  const [viewMonth, setViewMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+  const [viewMonth, setViewMonth] = useState(() => new Date())
   const [selectedId, setSelectedId] = useState(null)
   const [editing, setEditing] = useState(false)
   const [draftDate, setDraftDate] = useState('')
@@ -96,8 +96,8 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const [profileOpen,setProfileOpen] = useState(false)
   const currentBarber = barbers.find(b=>b.id===account?.id) || authenticatedBarber
   const [profileDraft,setProfileDraft] = useState(null)
-  function openProfile(){setProfileDraft({...currentBarber});setProfileOpen(true)}
-  function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,alias:profileDraft.alias||'',phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
+  function openProfile(){setProfileDraft({...currentBarber||{name:account?.name||'',alias:'',phone:''}});setProfileOpen(true)}
+  function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,...profileDraft,phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
 
   const ownAppointments = useMemo(() => appointments.filter((a) => a.barberId === account?.id), [appointments, account])
   const appointmentsForDay = useMemo(() => ownAppointments.filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time) || a.id - b.id), [ownAppointments, selectedDay])
@@ -107,8 +107,8 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     const mondayOffset = (anchor.getDay() + 6) % 7
     return Array.from({length:7},(_,i)=>({date:shiftDate(isoDate(anchor),i-mondayOffset)}))
   },[viewMonth])
-  const halfHours = useMemo(()=>Array.from({length:33},(_,i)=>{
-    const n=360+i*30
+  const halfHours = useMemo(()=>Array.from({length:19},(_,i)=>{
+    const n=600+i*30
     return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`
   }),[])
 
@@ -225,7 +225,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
 
       <div className="barber-shell">
         <header className="barber-panel-header">
-          <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF · DEMO</p><h2>{t.dashboard}</h2><p>{account.name} · {account.id}</p></div>
+          <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF</p><h2>{t.dashboard}</h2><p>{account.name} · {account.id}</p></div>
           <div className="barber-header-actions"><button type="button" onClick={openProfile} aria-label="Editar mi perfil profesional">👤 {language === 'es' ? 'Mi perfil' : 'My profile'}</button><button type="button" onClick={onExit}>{t.back}</button><button type="button" onClick={signOut}>{t.logout}</button></div>
         </header>
         <p className="barber-demo-banner">{t.demo} {t.notSaved}</p>
