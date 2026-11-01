@@ -15,6 +15,7 @@ const GROUPS = [
 ]
 const to24=(hour,minutes,period)=>`${String((Number(hour)%12)+(period==='PM'?12:0)).padStart(2,'0')}:${minutes}`
 const from24=value=>{const hour=Number((value||'10:00').split(':')[0]);return {hour:String(hour%12||12),minutes:(value||'10:00').split(':')[1]||'00',period:hour>=12?'PM':'AM'}}
+const displayTime=value=>{if(!/^\d{2}:\d{2}$/.test(value||''))return value||'';const {hour,minutes,period}=from24(value);return `${hour}:${minutes} ${period}`}
 const isOpenSlot=(day,value)=>{if(!day||!value)return false;const date=new Date(day+'T12:00:00');const weekday=date.getDay();return weekday!==0 && value>='10:00'&&value<='18:30'&&['00','30'].includes(value.slice(3))}
 
 const i18n = {
@@ -25,7 +26,7 @@ const i18n = {
     first: 'Nombre', last: 'Apellido', phone: 'Número de teléfono',
     help: 'Estos datos se usarán para identificar tu reserva cuando el sistema esté activo.',
     barberHelp: 'Selecciona uno de los perfiles activos de demostración.',
-    date: 'Fecha', time: 'Horario de ejemplo', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
+    date: 'Fecha', time: 'Hora', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
     groups: { adults: 'Cortes y arreglos', kids: 'Servicios para niños', other: 'Otras opciones' },
     names: {
       classic: 'Corte clásico', fade: 'Degradado / Skin Fade', haircutBeard: 'Corte y barba',
@@ -37,7 +38,7 @@ const i18n = {
     required: 'Completa los campos obligatorios para continuar.',
     phoneError: 'Introduce un celular válido de 10 dígitos.',
     dateError: 'Selecciona una fecha de hoy en adelante.',
-    barberError: 'Selecciona un barbero.', timeError: 'Selecciona un horario de ejemplo.',
+    barberError: 'Selecciona un barbero.', timeError: 'Selecciona una hora.',
     serviceError: 'Selecciona un servicio.',
     client: 'Cliente', barber: 'Barbero', service: 'Servicio',
     confirm: 'Confirmar cita', confirmed: '¡Tu cita ha sido confirmada!', warning: 'Tu cita se guardará en Firestore al confirmar.',
@@ -50,7 +51,7 @@ const i18n = {
     first: 'First name', last: 'Last name', phone: 'Phone number',
     help: 'These details will identify your booking when the system goes live.',
     barberHelp: 'Choose an active demo barber profile.',
-    date: 'Date', time: 'Sample time', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
+    date: 'Date', time: 'Hour', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
     groups: { adults: 'Haircuts & grooming', kids: "Kids' services", other: 'Other' },
     names: {
       classic: 'Classic Haircut', fade: 'Skin Fade / Bald Fade', haircutBeard: 'Haircut & Beard',
@@ -61,7 +62,7 @@ const i18n = {
     required: 'Complete all required fields to continue.',
     phoneError: 'Enter a valid 10 to 15 digit mobile number.',
     dateError: 'Choose today or a future date.',
-    barberError: 'Choose a barber.', timeError: 'Choose a sample time.',
+    barberError: 'Choose a barber.', timeError: 'Choose a time.',
     serviceError: 'Choose a service.',
     client: 'Customer', barber: 'Barber', service: 'Service',
     confirm: 'Confirm appointment', confirmed: 'Your appointment has been confirmed!', warning: 'Your booking is saved in Firestore after confirmation.',
@@ -228,7 +229,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
           </form>
           {matches.map(a=><div className="cb-summary" key={a.id}>
             <p><strong>{a.first} {a.last}</strong> · {barbers.find(b=>b.id===a.barberId)?.name||''}</p>
-            <p>{a.date} · {a.time} · {a.service}</p>
+            <p>{a.date} · {displayTime(a.time)} · {a.service}</p>
             <button className="cb-next" type="button" onClick={()=>{setSelectedBooking(a);setDate(a.date);setTime(a.time)}}>{language==='es'?'Modificar cita':'Modify booking'}</button>
           </div>)}
           {error && <p role="status" className="cb-error">{error}</p>}
@@ -307,7 +308,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
                   <div><dt>{t.phone}</dt><dd>{phone}</dd></div>
                   <div><dt>{t.barber}</dt><dd>{chosenBarber?.name}</dd></div>
                   <div><dt>{t.date}</dt><dd>{date}</dd></div>
-                  <div><dt>{t.time}</dt><dd>{time}</dd></div>
+                  <div><dt>{t.time}</dt><dd>{displayTime(time)}</dd></div>
                   <div><dt>{t.service}</dt><dd>{t.names[service]}</dd></div>
                 </dl>
                 <p className="cb-warning">{saved ? t.confirmed : (language==='es'?'Verifica los datos antes de confirmar.':'Review the details before confirming.')}</p>
