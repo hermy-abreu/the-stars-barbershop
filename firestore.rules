@@ -59,30 +59,29 @@ service cloud.firestore {
       allow create, update, delete: if isOwner();
     }
     match /appointments/{slot} {
-      allow get: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid)
-        || (isAnonymous() && resource.data.get('bookingOwnerUid','') == request.auth.uid);
-      allow list: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid)
-        || (isAnonymous() && resource.data.get('bookingOwnerUid','') == request.auth.uid);
+      function ownsBooking() {
+        return isAnonymous()
+          && resource.data.get('bookingOwnerUid', '') == request.auth.uid;
+      }
+      allow get, list: if isOwner()
+        || (isBarber() && resource.data.barberId == request.auth.uid)
+        || ownsBooking();
       allow create: if validAppointment()
-        && (isOwner() || (isBarber() && request.resource.data.barberId == request.auth.uid)
-          || (isAnonymous() && request.resource.data.walkIn == false
-            && request.resource.data.get('bookingOwnerUid','') == request.auth.uid
-            && request.resource.data.phone.matches('^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}(/databases/$(database)/documents/barbers/$(request.resource.data.barberId))
-            && get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.active == true))
-        && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time;
-      allow update: if false;
-      allow delete: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid)
-        || (isAnonymous() && resource.data.get('bookingOwnerUid','') == request.auth.uid);
-    }
-    match /{document=**} { allow read, write: if false; }
-  }
-}
-)
+        && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time
+        && (
+          isOwner()
+          || (isBarber() && request.resource.data.barberId == request.auth.uid)
+          || (isAnonymous()
+            && request.resource.data.walkIn == false
+            && request.resource.data.get('bookingOwnerUid', '') == request.auth.uid
+            && request.resource.data.phone.size() >= 10
             && exists(/databases/$(database)/documents/barbers/$(request.resource.data.barberId))
-            && get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.active == true))
-        && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time;
+            && get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.active == true)
+        );
       allow update: if false;
-      allow delete: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid);
+      allow delete: if isOwner()
+        || (isBarber() && resource.data.barberId == request.auth.uid)
+        || ownsBooking();
     }
     match /{document=**} { allow read, write: if false; }
   }
