@@ -10,9 +10,13 @@
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "firebase": "^13.1.0"
   },
   "devDependencies": {
     "vite": "^7.0.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6"
   }
 }
