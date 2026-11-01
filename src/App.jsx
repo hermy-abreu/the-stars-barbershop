@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
-import BarberDashboard from './BarberDashboard'
+import StaffAccess from './StaffAccess'
 import {STARTER_BARBERS,getStored,putStored} from './demoStore'
 
 // Datos editables: confirmar la dirección con el cliente antes de publicar.
@@ -162,7 +162,7 @@ export default function App() {
   useEffect(() => { document.documentElement.lang = language }, [language])
   const anchors = ['home', 'services', 'location', 'reviews']
 
-  if (barberView) return <BarberDashboard language={language} onExit={closeStaff} barbers={barbers} setBarbers={setBarbers} appointments={appointments} setAppointments={setAppointments} />
+  if (barberView) return <StaffAccess language={language} onExit={closeStaff} />
 
   return (
     <div className="site">
