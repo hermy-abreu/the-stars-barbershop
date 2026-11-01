@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
 import StaffAccess from './StaffAccess'
-import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
+import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, getDoc, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
 import { db, customerAuth, customerDb } from './firebase'
 
@@ -108,6 +108,11 @@ export default function App() {
     const weekday=new Date(date+'T12:00:00').getDay()
     return weekday!==0&&time>='10:00'&&time<='18:30'&&(time.endsWith(':00')||time.endsWith(':30'))
   }
+  async function checkSlot(barberId,date,time){
+    if(!barberId||!date||!time)return false
+    const marker=await getDoc(doc(customerDb,'occupiedSlots',barberId+'_'+date+'_'+time))
+    return marker.exists()
+  }
   async function createBooking(item) {
     if(!validBusinessSlot(item.date,item.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
     // Customer identity is anonymous; staff must always use their own signed-in account.
@@ -121,6 +126,7 @@ export default function App() {
       phone:item.phone||'',date:item.date,time:item.time,
       service:item.service,walkIn:false,bookingOwnerUid:customerAuth.currentUser.uid,createdAt:serverTimestamp()
     })
+    try{await setDoc(doc(customerDb,'occupiedSlots',slot),{occupied:true})}catch(e){console.warn('Availability marker pending:',e.code)}
     const record={...item,id:slot}
     setLatestBooking(record)
     return record
@@ -339,7 +345,7 @@ export default function App() {
           </div>
         </section>
 
-        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={createBooking} onFindAppointments={findBookings} onChangeAppointment={changeBooking} onCancelAppointment={cancelBooking} />
+        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCheckSlot={checkSlot} onCreateAppointment={createBooking} onFindAppointments={findBookings} onChangeAppointment={changeBooking} onCancelAppointment={cancelBooking} />
       </main>
       {!installed && <section className="install-invite" aria-label="Install The Stars Barbershop">
         <h2>THE STARS BARBERSHOP</h2>
