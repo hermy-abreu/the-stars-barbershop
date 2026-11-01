@@ -50,6 +50,7 @@ export default function TestDashboard({user,role,language='es'}) {
   e.preventDefault()
   const uid=owner?barberId:user.uid
   if(!uid||!client.trim()||!surname.trim())return
+  if(walkIn && date!==today()){setMessage('Walk-in can only be created today');return}
   const slot=uid+'_'+date+'_'+time
   setBusy(true);setMessage('')
   try{
@@ -82,10 +83,10 @@ export default function TestDashboard({user,role,language='es'}) {
      </select></label>}
      <label>First name <input value={client} required onChange={e=>setClient(e.target.value)}/></label>
      <label>Last name <input value={surname} required onChange={e=>setSurname(e.target.value)}/></label>
-     <label>Date <input type="date" min={today()} value={date} required onChange={e=>setDate(e.target.value)}/></label>
+     <label>Date <input type="date" min={today()} value={date} required disabled={walkIn} onChange={e=>setDate(e.target.value)}/></label>
      <label>Time <input type="time" value={time} required onChange={e=>setTime(e.target.value)}/></label>
      <label>Service <input value={service} onChange={e=>setService(e.target.value)}/></label>
-     <label>Walk-in <input type="checkbox" checked={walkIn} onChange={e=>setWalkIn(e.target.checked)}/></label>
+     <label>Walk-in <input type="checkbox" checked={walkIn} onChange={e=>{setWalkIn(e.target.checked);if(e.target.checked)setDate(today())}}/></label>
      <button disabled={busy}>Save in Firestore</button>
    </form>
    <h3>Saved appointments</h3>
