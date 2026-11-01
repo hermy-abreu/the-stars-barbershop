@@ -186,7 +186,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
       setSavedRecord(record)
       setSaved(true)
       setError('')
-    } catch (failure) {saveLock.current=false;const code=failure?.code||'';if(code==='already-exists'){setStep(2);setShowBusyModal(true)}else{setError(language==='es'?'No se pudo confirmar la cita. Revisa tu conexión o vuelve a intentarlo.':'Could not confirm the booking. Check your connection or try again.')}console.error(failure)}
+    } catch (failure) {saveLock.current=false;const code=failure?.code||'';if(code==='already-exists'){setStep(2);setShowBusyModal(true)}else{setError(language==='es'?'No se pudo confirmar la cita. El horario puede estar ocupado o Firebase puede haber rechazado la operación. Selecciona otro horario o comunícate con la barbería al 570-817-3470.':'Booking could not be confirmed. The slot may be occupied or Firebase may have rejected the request. Choose another time or call 570-817-3470.')}console.error(failure)}
   }
   async function searchBooking(event){
     event.preventDefault()
@@ -195,7 +195,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
     try{
       const result=await onFindAppointments({first:first.trim(),last:last.trim(),phone:formatPhone(phone)})
       setMatches(result)
-      if(!result.length)setError(language==='es'?'No encontramos una cita en esta sesión del navegador.':'No booking found in this browser session.')
+      if(!result.length)setError(language==='es'?'No se encontró una cita vinculada a esta sesión. Si reservaste desde otro dispositivo o antes de un cambio de sesión, tu cita puede seguir registrada. Comunícate con la barbería al 570-817-3470 para verificarla.':'No booking is linked to this session. An appointment booked on another device or before a session change may still exist. Call the barbershop at 570-817-3470 to verify it.')
     }catch(err){setError(err.message)}
     finally{setSearchBusy(false)}
   }
