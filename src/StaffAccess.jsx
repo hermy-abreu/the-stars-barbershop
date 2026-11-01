@@ -44,7 +44,7 @@ export default function StaffAccess({language='es',onExit}) {
     <img src="/images/logo-oficial.png" className="barber-official-logo" alt="The Stars Barbershop"/>
     <h2>Staff</h2>
     {loading ? <p>{es?'Verificando acceso…':'Checking access…'}</p>
-    : !user ? <form onSubmit={login}>
+    : (!user || user.isAnonymous) ? <form onSubmit={login}>
       <label>{es?'Usuario o correo':'Username or email'}<input type="text" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)}/></label>
       <label>{es?'Contraseña':'Password'}<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
       <button type="submit" className="barber-gold-button">{es?'Entrar':'Sign in'}</button>
