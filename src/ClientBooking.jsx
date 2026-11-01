@@ -222,12 +222,12 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         <p className="cb-eyebrow">THE STARS BARBERSHOP</p>
         <h2>{t.title}</h2>
         {mode==='find' && <div className="cb-search-panel">
-          <button type="button" className="cb-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar':'Add'}</button>
+          <button type="button" className="cb-back cb-search-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar':'Add'}</button>
           <form className="cb-fields" onSubmit={searchBooking}>
             <label>{t.first} *<input value={first} autoComplete="given-name" onChange={e=>setFirst(e.target.value)}/></label>
             <label>{t.last} *<input value={last} autoComplete="family-name" onChange={e=>setLast(e.target.value)}/></label>
             <label>{t.phone} *<input type="tel" inputMode="tel" value={phone} placeholder="Ej. (570) 555-0100" onChange={e=>setPhone(formatPhone(e.target.value))}/></label>
-            <button type="submit" className="cb-next" disabled={searchBusy}>{language==='es'?'Buscar cita':'Find booking'}</button>
+            <button type="submit" className="cb-next cb-search-submit" disabled={searchBusy}>{language==='es'?'Buscar cita':'Find booking'}</button>
           </form>
           {matches.map(a=><div className="cb-summary" key={a.id}>
             <p><strong>{a.first} {a.last}</strong> · {barbers.find(b=>b.id===a.barberId)?.name||''}</p>
