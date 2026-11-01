@@ -132,3 +132,11 @@
 .cb-search-panel .cb-search-back:focus-visible,.cb-search-panel .cb-search-submit:focus-visible{outline:3px solid #bd8c2a;outline-offset:3px}
 .cb-search-panel .cb-search-submit:disabled{opacity:.6;cursor:not-allowed}
 @media(max-width:560px){.cb-search-panel .cb-search-back,.cb-search-panel .cb-search-submit{font-size:14px;min-height:48px;padding:11px 14px}}
+
+/* Dialog for unavailable appointment slots, within the existing booking visual system. */
+.cb-alert-overlay{position:fixed;inset:0;z-index:1500;background:rgba(10,22,42,.60);display:grid;place-items:center;padding:16px}
+.cb-alert-dialog{width:min(100%,490px);max-height:90dvh;overflow:auto;background:#fff;border:1px solid #ddc995;border-radius:16px;padding:26px;box-shadow:0 20px 70px #101b3550;color:#15223b}
+.cb-alert-dialog h3{margin:0 0 12px;font-size:24px;color:#16213b}
+.cb-alert-dialog p{margin:10px 0;line-height:1.55}
+.cb-alert-dialog a{color:#865d0b;text-decoration:underline;font-weight:700}
+.cb-alert-dialog .cb-next{display:block;width:100%;min-height:48px;padding:12px;border-radius:10px;margin-top:20px;font-weight:800;cursor:pointer}
