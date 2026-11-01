@@ -20,7 +20,7 @@ const i18n = {
     title: 'Reserva tu próxima cita', demo: 'RESERVAS CONECTADAS A FIRESTORE',
     steps: ['Tus datos', 'Barbero', 'Fecha y hora', 'Servicio', 'Resumen'],
     next: 'Siguiente', back: 'Anterior', restart: 'Comenzar de nuevo',
-    first: 'Nombre', last: 'Apellido', phone: 'Número de teléfono (opcional)',
+    first: 'Nombre', last: 'Apellido', phone: 'Número de teléfono',
     help: 'Estos datos se usarán para identificar tu reserva cuando el sistema esté activo.',
     barberHelp: 'Selecciona uno de los perfiles activos de demostración.',
     date: 'Fecha', time: 'Horario de ejemplo', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
@@ -45,7 +45,7 @@ const i18n = {
     title: 'Book your next appointment', demo: 'BOOKINGS SAVED TO FIRESTORE',
     steps: ['Your details', 'Barber', 'Date & time', 'Service', 'Summary'],
     next: 'Next', back: 'Back', restart: 'Start again',
-    first: 'First name', last: 'Last name', phone: 'Phone number (optional)',
+    first: 'First name', last: 'Last name', phone: 'Phone number',
     help: 'These details will identify your booking when the system goes live.',
     barberHelp: 'Choose an active demo barber profile.',
     date: 'Date', time: 'Sample time', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
@@ -86,10 +86,14 @@ function BarberCard({ barber, selected, onSelect, onProfile, t }) {
   )
 }
 
-export default function ClientBooking({ language = 'en', barbers=[], appointments=[], onCreateAppointment, latestBooking=null }) {
+export default function ClientBooking({ language = 'en', barbers=[], appointments=[], onCreateAppointment, onFindAppointments, onChangeAppointment, onCancelAppointment, latestBooking=null }) {
   const t = i18n[language] || i18n.en
   // Referencia al formulario para mantener visible la nueva pantalla tras cada giro.
   const bookingRef = useRef(null)
+  const [mode,setMode] = useState('add')
+  const [matches,setMatches] = useState([])
+  const [selectedBooking,setSelectedBooking] = useState(null)
+  const [searchBusy,setSearchBusy] = useState(false)
   const [step, setStep] = useState(0)
   const [phase, setPhase] = useState('idle')
   const [direction, setDirection] = useState('forward')
@@ -113,7 +117,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
     if (step === 0) {
       if (!first.trim() || !last.trim()) return t.required
       const digits = phone.replace(/\D/g, '')
-      if (digits.length !== 0 && digits.length !== 10) return t.phoneError
+      if (digits.length !== 10) return t.phoneError
     }
     if (step === 1 && !barber) return t.barberError
     if (step === 2) {
@@ -163,7 +167,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
   async function saveDemoAppointment(){
-    if(saved || saveLock.current || !chosenBarber || !date || !time || !service || !first.trim() || !last.trim() || (phone.trim() && phone.replace(/\D/g,'').length!==10)) return
+    if(saved || saveLock.current || !chosenBarber || !date || !time || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
     if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time && !a.walkIn)) {setError(language==='es'?'Horario ya ocupado para este barbero.':'Time already reserved for this barber.');return}
     saveLock.current=true
     try {
@@ -175,12 +179,69 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
       setError('')
     } catch (failure) {saveLock.current=false;setError(language==='es'?'No se pudo guardar esta cita. Vuelve a intentarlo.':'Could not save this booking. Please try again.');console.error(failure)}
   }
+  async function searchBooking(event){
+    event.preventDefault()
+    if(!first.trim()||!last.trim()||phone.replace(/\D/g,'').length!==10){setError(language==='es'?'Completa nombre, apellido y teléfono.':'Enter first name, last name and phone.');return}
+    setSearchBusy(true);setError('');setMatches([]);setSelectedBooking(null)
+    try{
+      const result=await onFindAppointments({first:first.trim(),last:last.trim(),phone:formatPhone(phone)})
+      setMatches(result)
+      if(!result.length)setError(language==='es'?'No encontramos una cita en esta sesión del navegador.':'No booking found in this browser session.')
+    }catch(err){setError(err.message)}
+    finally{setSearchBusy(false)}
+  }
+  async function modifyBooking(event){
+    event.preventDefault()
+    if(!selectedBooking||!date||!time||date<todayLocal())return
+    setSearchBusy(true);setError('')
+    try {
+      await onChangeAppointment(selectedBooking,{date,time})
+      setSelectedBooking(null);setMatches([])
+      setError(language==='es'?'Cita modificada correctamente.':'Booking updated successfully.')
+    }catch(err){setError(err.message)}
+    finally{setSearchBusy(false)}
+  }
+  async function cancelFoundBooking(){
+    if(!selectedBooking||!window.confirm(language==='es'?'¿Cancelar esta cita?':'Cancel this booking?'))return
+    setSearchBusy(true);setError('')
+    try{
+      await onCancelAppointment(selectedBooking)
+      setSelectedBooking(null);setMatches(matches.filter(x=>x.id!==selectedBooking.id))
+      setError(language==='es'?'Cita cancelada correctamente.':'Booking cancelled successfully.')
+    }catch(err){setError(err.message)}
+    finally{setSearchBusy(false)}
+  }
   return (
     <section id="booking" ref={bookingRef} className="client-booking section">
       <div className="container cb-container">
         <p className="cb-eyebrow">THE STARS BARBERSHOP</p>
         <h2>{t.title}</h2>
         <p className="cb-demo" role="note">{t.demo}</p>
+        <div className="cb-booking-modes" role="group" aria-label="Booking options">
+          <button type="button" className={mode==='add'?'cb-next':'cb-back'} onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>{language==='es'?'Agregar cita':'Add booking'}</button>
+          <button type="button" className={mode==='find'?'cb-next':'cb-back'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Buscar cita':'Find booking'}</button>
+        </div>
+        {mode==='find' && <div className="cb-search-panel">
+          <form className="cb-fields" onSubmit={searchBooking}>
+            <label>{t.first} *<input value={first} autoComplete="given-name" onChange={e=>setFirst(e.target.value)}/></label>
+            <label>{t.last} *<input value={last} autoComplete="family-name" onChange={e=>setLast(e.target.value)}/></label>
+            <label>{t.phone} *<input type="tel" inputMode="tel" value={phone} placeholder="Ej. (570) 555-0100" onChange={e=>setPhone(formatPhone(e.target.value))}/></label>
+            <button type="submit" className="cb-next" disabled={searchBusy}>{language==='es'?'Buscar cita':'Find booking'}</button>
+          </form>
+          {matches.map(a=><div className="cb-summary" key={a.id}>
+            <p><strong>{a.first} {a.last}</strong> · {barbers.find(b=>b.id===a.barberId)?.name||''}</p>
+            <p>{a.date} · {a.time} · {a.service}</p>
+            <button className="cb-next" type="button" onClick={()=>{setSelectedBooking(a);setDate(a.date);setTime(a.time)}}>{language==='es'?'Modificar cita':'Modify booking'}</button>
+          </div>)}
+          {selectedBooking && <form className="cb-fields" onSubmit={modifyBooking}>
+            <h3>{language==='es'?'Modificar cita':'Modify booking'}</h3>
+            <label>{t.date}<input type="date" required min={todayLocal()} value={date} onChange={e=>setDate(e.target.value)}/></label>
+            <label>{t.time}<input type="time" required value={time} onChange={e=>setTime(e.target.value)}/></label>
+            <div className="cb-actions"><button className="cb-next" disabled={searchBusy}>{language==='es'?'Guardar cambios':'Save changes'}</button><button className="cb-back" type="button" disabled={searchBusy} onClick={cancelFoundBooking}>{language==='es'?'Cancelar cita':'Cancel booking'}</button></div>
+          </form>}
+        </div>}
+        {mode==='add' && <>
+
 
         <nav className="cb-progress" aria-label={t.title}>
           {t.steps.map((label, index) => (
@@ -199,7 +260,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
               <div className="cb-fields">
                 <label>{t.first} *<input value={first} autoComplete="given-name" maxLength={80} onChange={(e) => { setFirst(e.target.value); setError('') }} /></label>
                 <label>{t.last} *<input value={last} autoComplete="family-name" maxLength={80} onChange={(e) => { setLast(e.target.value); setError('') }} /></label>
-                <label>{t.phone}<input type="tel" value={phone} autoComplete="tel" inputMode="tel" maxLength={14} placeholder="Ej. (570) 555-0100" onChange={(e) => { setPhone(formatPhone(e.target.value)); setError('') }} /></label>
+                <label>{t.phone} *<input type="tel" value={phone} autoComplete="tel" inputMode="tel" maxLength={14} placeholder="Ej. (570) 555-0100" onChange={(e) => { setPhone(formatPhone(e.target.value)); setError('') }} /></label>
                 <p className="cb-help">{t.help}</p>
               </div>
             )}
@@ -269,10 +330,11 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         <div className={`cb-actions ${step === 4 ? 'cb-actions-summary' : ''}`}>
           {step > 0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={() => navigate(step - 1)}>← {t.back}</button>}
           {step < 4 ? <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{t.next} →</button> : <>
-            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || (phone.trim() && phone.replace(/\D/g,'').length!==10) || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
+            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
             <button type="button" className="cb-back cb-restart" onClick={reset}>{t.restart} ↻</button>
           </>}
         </div>
+        </>}
       </div>
     </section>
   )
