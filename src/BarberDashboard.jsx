@@ -51,7 +51,7 @@ const WORDS = {
     removeAsk: '¿Eliminar esta cita ficticia?', overlap: 'Ese horario coincide con otra cita de este barbero.',
     conflict: 'Selecciona otro horario antes de guardar.',
     walkinNote: 'Los Walk-in se registran hoy a la hora actual, aunque haya una cita cercana.', walkinOnlyToday: 'Solo puedes registrar Walk-in en el día actual.',
-    reserved: 'Con cita', walkinType: 'Sin cita', notSaved: 'Los datos de prueba se conservan únicamente en este navegador.',
+    reserved: 'Con cita', walkinType: 'Sin cita', notSaved: '',
     back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: 'La jornada laboral real se configurará con el propietario.',
   },
   en: {
@@ -66,7 +66,7 @@ const WORDS = {
     removeAsk: 'Delete this fictitious appointment?', overlap: 'Another appointment already uses this time for this barber.',
     conflict: 'Choose another time before saving.',
     walkinNote: 'Walk-ins are recorded today at the current time, even near booked appointments.', walkinOnlyToday: 'Walk-ins can only be added for today.',
-    reserved: 'Booked', walkinType: 'Walk-in', notSaved: 'Demo data remains in this browser only.',
+    reserved: 'Booked', walkinType: 'Walk-in', notSaved: '',
     back: 'Back to website', saveChanges: 'Save changes', noWorkingSchedule: 'Real working schedules will be configured with the owner.',
   },
 }
