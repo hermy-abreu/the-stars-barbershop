@@ -1,9 +1,46 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Deny by default. Never open database while client authentication is demo-only.
-    match /{document=**} {
-      allow read, write: if false;
-    }
+ match /databases/{database}/documents {
+  function signed() { return request.auth != null; }
+  function staff() { return signed() && exists(/databases/$(database)/documents/staff/$(request.auth.uid))
+    && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.active == true; }
+  function owner() { return staff() && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'owner'; }
+  function own(uid) { return staff() && request.auth.uid == uid; }
+  function appointmentFields() { return ['barberId','first','last','phone','date','time','service','walkIn','createdAt']; }
+  function validAppointment() {
+   return request.resource.data.keys().hasOnly(appointmentFields())
+     && request.resource.data.keys().hasAll(appointmentFields())
+     && request.resource.data.barberId is string && request.resource.data.barberId.size() > 0
+     && request.resource.data.first is string && request.resource.data.first.size() > 0 && request.resource.data.first.size() <= 70
+     && request.resource.data.last is string && request.resource.data.last.size() > 0 && request.resource.data.last.size() <= 70
+     && request.resource.data.phone is string && request.resource.data.phone.size() <= 24
+     && request.resource.data.date is string && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+     && request.resource.data.time is string && request.resource.data.time.matches('^[0-9]{2}:[0-9]{2}$')
+     && request.resource.data.service is string && request.resource.data.service.size() <= 100
+     && request.resource.data.walkIn is bool
+     && request.resource.data.createdAt == request.time;
   }
+  match /staff/{uid} {
+    allow read: if owner() || own(uid);
+    allow create, delete: if owner() && request.resource.data.role == 'barber';
+    allow update: if owner() && resource.data.role == 'barber'
+      && request.resource.data.role == 'barber';
+  }
+  match /barbers/{barberId} {
+    allow read: if true;
+    allow write: if owner();
+  }
+  match /appointments/{slot} {
+    allow create: if validAppointment() &&
+      (owner() || (staff() && request.resource.data.barberId == request.auth.uid))
+      && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time;
+    allow read: if owner() || (staff() && resource.data.barberId == request.auth.uid);
+    allow update: if owner() && validAppointment()
+      && request.resource.data.barberId == resource.data.barberId
+      && request.resource.data.date == resource.data.date
+      && request.resource.data.time == resource.data.time;
+    allow delete: if owner() || (staff() && resource.data.barberId == request.auth.uid);
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
 }
