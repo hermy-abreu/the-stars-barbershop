@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
 import { auth, db } from './firebase'
 import './BarberDashboard.css'
 import TestDashboard from './TestDashboard'
+import OwnerDashboard from './OwnerDashboard'
 
 // The legacy demo dashboards are intentionally not exposed here.
 // Only server-authorized roles may be used when real dashboards are connected.
@@ -15,6 +16,14 @@ export default function StaffAccess({language='es',onExit}) {
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
   const [error,setError]=useState('')
+  const [barbers,setBarbers]=useState([])
+  const [appointments,setAppointments]=useState([])
+  useEffect(()=>{
+    if(role!=='owner'||!user||user.isAnonymous)return
+    const stopBarbers=onSnapshot(collection(db,'barbers'),snap=>setBarbers(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
+    const stopBookings=onSnapshot(collection(db,'appointments'),snap=>setAppointments(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
+    return ()=>{stopBarbers();stopBookings()}
+  },[role,user])
   useEffect(()=>{
     let alive=true
     const unsubscribe=onAuthStateChanged(auth,async candidate=>{
@@ -39,6 +48,7 @@ export default function StaffAccess({language='es',onExit}) {
     catch { setError(es?'Credenciales incorrectas o acceso no disponible.':'Invalid credentials or sign-in unavailable.') }
     finally { setPassword('') }
   }
+  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} staffPanel={<TestDashboard user={user} role={role} language={language}/>} />
   return <section className="barber-area"><div className="barber-login-card">
     <button type="button" className="barber-simple-link" onClick={onExit}>← {es?'Volver a la web':'Back to website'}</button>
     <img src="/images/logo-oficial.png" className="barber-official-logo" alt="The Stars Barbershop"/>
