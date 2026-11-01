@@ -45,7 +45,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
   // El contador del ID es global, nunca reinicia por iniciales.
   // La futura base de datos deberá generar el contador transaccionalmente.
   function nextSequence() {
-    return Math.max(0,...barbers.map(b=>Number(b.id.match(/-(\d+)$/)?.[1]||0)))+1
+    return Math.max(0,...barbers.map(b=>Number((b.displayId||'').match(/-(\d+)$/)?.[1]||0)))+1
   }
   // Genera un usuario único. Si otro barbero comparte nombre,
   // añade letras del apellido y, finalmente, un número.
@@ -149,7 +149,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
       <div className="owner-profile-list" id="owner-profile-list-anchor">
         {barbers.map(b=><article key={b.id} className="owner-profile-card">
           {b.photo?<img src={b.photo} alt="" />:<span className="owner-profile-avatar" aria-hidden="true">{b.name.slice(0,1)}</span>}
-          <div><strong>{b.name}</strong><small>{b.id} · @{b.username}</small><small>{b.active===false?(language==='es'?'Inactivo':'Inactive'):(language==='es'?'Activo':'Active')}</small></div>
+          <div><strong>{b.name}</strong><small>{b.displayId||b.id} · @{b.username}</small><small>{b.active===false?(language==='es'?'Inactivo':'Inactive'):(language==='es'?'Activo':'Active')}</small></div>
           <div className="owner-profile-actions">
             <button type="button" onClick={()=>startEdit(b)}>{language==='es'?'Editar':'Edit'}</button>
             <button type="button" onClick={()=>toggleBarber(b.id)}>{b.active===false?(language==='es'?'Activar':'Activate'):(language==='es'?'Desactivar':'Deactivate')}</button>
@@ -159,7 +159,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     </section> : <>
     <div className="owner-agenda-content">
     <div className="owner-filters print-hide">
-      <label>{t.filter}<select value={barber} onChange={e=>setBarber(e.target.value)}><option value="all">{t.all}</option>{barbers.map(b=><option key={b.id} value={b.id}>{b.name} · {b.id}</option>)}</select></label>
+      <label>{t.filter}<select value={barber} onChange={e=>setBarber(e.target.value)}><option value="all">{t.all}</option>{barbers.map(b=><option key={b.id} value={b.id}>{b.name} · {b.displayId||b.id}</option>)}</select></label>
       <label>{t.period}<select value={period} onChange={e=>setPeriod(e.target.value)}><option value="day">{t.day}</option><option value="week">{t.week}</option><option value="month">{t.month}</option></select></label>
       <label>{t.date}<input type="date" value={reference} onChange={e=>setReference(e.target.value)}/></label>
       <button className="owner-print-button" type="button" onClick={()=>window.print()}>{t.pdf}</button>
