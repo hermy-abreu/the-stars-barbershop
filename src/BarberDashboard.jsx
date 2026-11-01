@@ -51,7 +51,6 @@ const WORDS = {
     removeAsk: '¿Eliminar esta cita ficticia?', overlap: 'Ese horario coincide con otra cita de este barbero.',
     conflict: 'Selecciona otro horario antes de guardar.',
     walkinNote: 'Los Walk-in se registran hoy a la hora actual, aunque haya una cita cercana.', walkinOnlyToday: 'Solo puedes registrar Walk-in en el día actual.',
-    example: 'Cuentas de prueba: hermy / Ab1234 · alex / 123456 · miguel / Mr1234 · owner / Ow1234',
     reserved: 'Con cita', walkinType: 'Sin cita', notSaved: 'Los datos de prueba se conservan únicamente en este navegador.',
     back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: 'La jornada laboral real se configurará con el propietario.',
   },
@@ -67,7 +66,6 @@ const WORDS = {
     removeAsk: 'Delete this fictitious appointment?', overlap: 'Another appointment already uses this time for this barber.',
     conflict: 'Choose another time before saving.',
     walkinNote: 'Walk-ins are recorded today at the current time, even near booked appointments.', walkinOnlyToday: 'Walk-ins can only be added for today.',
-    example: 'Demo accounts: hermy / Ab1234 · alex / 123456 · miguel / Mr1234 · owner / Ow1234',
     reserved: 'Booked', walkinType: 'Walk-in', notSaved: 'Demo data remains in this browser only.',
     back: 'Back to website', saveChanges: 'Save changes', noWorkingSchedule: 'Real working schedules will be configured with the owner.',
   },
@@ -133,10 +131,6 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
 
   function login(event) {
     event.preventDefault()
-    if (username.trim().toLowerCase() === 'owner' && password === 'Ow1234') {
-      setAccount({ id: 'OWNER', name: 'Propietario (demo)', username: 'owner', role: 'owner' })
-      setLoginError(''); setPassword(''); return
-    }
     const barber = barbers.find(b => b.active !== false && b.username === username.trim().toLowerCase() && b.password === password)
     if (!barber) { setLoginError(t.invalid); return }
     setAccount({ id: barber.id, name: barber.name, username: barber.username, role: 'barber' })
@@ -205,7 +199,6 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
           {loginError && <p role="alert" className="barber-error">{loginError}</p>}
           <button type="submit" className="barber-gold-button">{t.login}</button>
         </form>
-        <p className="barber-demo-hint">{t.example}</p>
       </div>
     </section>
   )
