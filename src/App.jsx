@@ -8,7 +8,9 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
 import StaffAccess from './StaffAccess'
-import {STARTER_BARBERS,getStored,putStored} from './demoStore'
+import { collection, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { signInAnonymously } from 'firebase/auth'
+import { auth, db } from './firebase'
 
 // Datos editables: confirmar la dirección con el cliente antes de publicar.
 const SHOP = {
@@ -93,12 +95,28 @@ function detectLanguage() {
 }
 
 export default function App() {
-  // Única fuente demo de barberos y citas para sitio, propietario y Staff.
-  const [barbers,setBarbers]=useState(()=>getStored('barbers',STARTER_BARBERS))
-  const [appointments,setAppointments]=useState(()=>getStored('appointments',[]))
+  const [barbers,setBarbers]=useState([])
+  const [appointments] = useState([])
   const [latestBooking,setLatestBooking]=useState(null)
-  useEffect(()=>putStored('barbers',barbers),[barbers])
-  useEffect(()=>putStored('appointments',appointments),[appointments])
+  useEffect(() => {
+    return onSnapshot(collection(db,'barbers'), snapshot => {
+      setBarbers(snapshot.docs.map(item=>({id:item.id,...item.data()})))
+    }, error => console.error('No se pudieron cargar los barberos:',error.code))
+  }, [])
+  async function createBooking(item) {
+    // Customer identity is anonymous; staff must always use their own signed-in account.
+    await auth.authStateReady()
+    if(!auth.currentUser) await signInAnonymously(auth)
+    const slot = item.barberId+'_'+item.date+'_'+item.time
+    await setDoc(doc(db,'appointments',slot),{
+      barberId:item.barberId,first:item.first,last:item.last,
+      phone:item.phone||'',date:item.date,time:item.time,
+      service:item.service,walkIn:false,createdAt:serverTimestamp()
+    })
+    const record={...item,id:slot}
+    setLatestBooking(record)
+    return record
+  }
   // El idioma se detecta automáticamente al cargar la PWA.
   // La interfaz ya no ofrece un selector manual EN/ES.
   const [language, setLanguage] = useState(detectLanguage)
@@ -279,8 +297,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Formulario de prueba sin backend ni reservas reales. */}
-        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={item=>{ const current=getStored('appointments',appointments); const record={...item,id:Math.max(Date.now(), ...current.map(a=>Number(a.id)||0))+1}; const next=[...current,record]; putStored('appointments',next); setAppointments(next); setLatestBooking(record); return record }} />
+        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={createBooking} />
       </main>
       {!installed && <section className="install-invite" aria-label="Install The Stars Barbershop">
         <h2>THE STARS BARBERSHOP</h2>
