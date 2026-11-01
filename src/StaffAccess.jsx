@@ -92,41 +92,42 @@ export default function StaffAccess({language='es',onExit}) {
     if(role!=='owner')throw Error('Acceso restringido')
     await updateDoc(doc(db,'barbers',id),patch)
   }
-  async function deleteBarber(id,destinationId){
+  async function deleteBarber(id){
     if(role!=='owner')throw Error('Acceso restringido')
     const source=barbers.find(b=>b.id===id)
-    const destination=barbers.find(b=>b.id===destinationId&&b.active!==false)
-    if(!source||!destination||id===destinationId)throw Error('Selecciona un barbero receptor válido.')
+    if(!source)throw Error('Barbero no encontrado.')
     const snapshot=await getDocs(query(collection(db,'appointments'),where('barberId','==',id)))
     const entries=snapshot.docs
-    // Firestore transactions have finite write limits. Never delete an account
-    // when its entire appointment history cannot be transferred atomically.
-    if(entries.length>180)throw Error('Demasiadas citas para trasladar en una sola operación segura. No se eliminó nada.')
+    const replacements=barbers.filter(b=>b.id!==id&&b.active!==false)
+    // Preserve reservations: transfer only when a unique destination exists.
+    if(entries.length>0 && replacements.length!==1)
+      throw Error('No se puede eliminar: hay citas y no existe un único barbero receptor. No se eliminó nada.')
+    if(entries.length>180)throw Error('Hay demasiadas citas para transferirlas de forma segura. No se eliminó nada.')
+    const destinationId=replacements.length===1?replacements[0].id:null
     await runTransaction(db,async tx=>{
       const sourceRef=doc(db,'barbers',id)
-      const destRef=doc(db,'barbers',destinationId)
       const sourceStaff=doc(db,'staff',id)
-      const sourceSnap=await tx.get(sourceRef)
-      const destSnap=await tx.get(destRef)
-      if(!sourceSnap.exists()||!destSnap.exists()||destSnap.data().active===false)throw Error('Los perfiles han cambiado. Actualiza la página.')
+      const profile=await tx.get(sourceRef)
+      if(!profile.exists())throw Error('El barbero ya no existe.')
+      let destinationRef=null
+      if(entries.length){
+        destinationRef=doc(db,'barbers',destinationId)
+        const destination=await tx.get(destinationRef)
+        if(!destination.exists()||destination.data().active===false)throw Error('No hay barbero receptor disponible.')
+      }
       const targetRefs=entries.map(entry=>doc(db,'appointments',destinationId+'_'+entry.data().date+'_'+entry.data().time))
       const existing=await Promise.all(targetRefs.map(ref=>tx.get(ref)))
-      if(existing.some(s=>s.exists()))throw Error('El nuevo barbero ya tiene una cita en uno de esos horarios. No se transfirió ni eliminó nada.')
+      if(existing.some(s=>s.exists()))throw Error('El barbero receptor ya tiene citas en ese horario. No se eliminó nada.')
       for(let i=0;i<entries.length;i++){
         const appointment=entries[i].data()
         tx.set(targetRefs[i],{
-          barberId:destinationId,first:appointment.first,last:appointment.last,
-          phone:appointment.phone||'',date:appointment.date,time:appointment.time,
-          service:appointment.service||'',walkIn:!!appointment.walkIn,
-          createdAt:serverTimestamp()
+          ...appointment,barberId:destinationId,createdAt:serverTimestamp()
         })
         tx.delete(entries[i].ref)
       }
       tx.delete(sourceStaff)
       tx.delete(sourceRef)
     })
-    // The former Firebase Authentication identity remains disabled for Staff
-    // through removal of its staff authorization document.
   }
   if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onDeleteBarber={deleteBarber}/>
 
