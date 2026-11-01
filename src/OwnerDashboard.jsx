@@ -29,6 +29,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
   const [tab,setTab]=useState('agenda')
   const [first,setFirst]=useState('')
   const [last,setLast]=useState('')
+  const [barberPhone,setBarberPhone]=useState('')
   const [profileError,setProfileError]=useState('')
   const [profileMessage,setProfileMessage]=useState('')
   const [temporaryPassword,setTemporaryPassword]=useState('')
@@ -70,19 +71,23 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     ?uniqueUsername(validFirst,validLast,editingId):'—'
 
   function resetProfileForm() {
-    setFirst('');setLast('');setTemporaryPassword('');setEditingId('')
+    setFirst('');setLast('');setBarberPhone('');setTemporaryPassword('');setEditingId('')
     setProfileError('');setProfileMessage('')
   }
   function startEdit(b) {
     const parts=b.name.trim().split(/\s+/)
     setFirst(b.firstName||parts[0]||'')
     setLast(b.lastName||parts.slice(1).join(' ')||'')
+    setBarberPhone(b.phone||'')
     setEditingId(b.id)
     setTemporaryPassword('')
     setProfileError('');setProfileMessage('')
   }
   async function createBarber(event) {
     event.preventDefault()
+    const digits=barberPhone.replace(/\D/g,'')
+    if(digits.length && digits.length!==10){setProfileError(language==='es'?'El número debe tener 10 dígitos o quedar vacío.':'Phone must contain 10 digits or be left blank.');return}
+    const phone=digits?`(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`:''
     const f=clean(first),l=clean(last)
     if(!f||!l) {
       setProfileError(language==='es'?'Nombre y apellido son obligatorios.':'First and last name are required.')
@@ -90,10 +95,10 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     }
     if(editingId) {
       // No modificamos ID ni usuario: son identificadores estables.
-      try {await onUpdateBarber(editingId,{name:`${first.trim()} ${last.trim()}`,firstName:first.trim(),lastName:last.trim()})}
+      try {await onUpdateBarber(editingId,{name:`${first.trim()} ${last.trim()}`,firstName:first.trim(),lastName:last.trim(),phone})}
       catch(err){setProfileError(err.message);return}
       setProfileMessage(language==='es'?'Perfil actualizado. El ID y el usuario permanecen iguales.':'Profile updated. ID and username remain unchanged.')
-      setEditingId('');setFirst('');setLast('');setProfileError('')
+      setEditingId('');setFirst('');setLast('');setBarberPhone('');setProfileError('')
       return
     }
     if(!/^(?:[0-9]{6}|(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])[A-Za-z0-9]{6})$/.test(temporaryPassword)) {
@@ -102,10 +107,10 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
     }
     const id=proposedId
     const username=proposedUsername
-    try {await onCreateBarber({id,name:`${first.trim()} ${last.trim()}`,firstName:first.trim(),lastName:last.trim(),username,password:temporaryPassword,active:true})}
+    try {await onCreateBarber({id,name:`${first.trim()} ${last.trim()}`,firstName:first.trim(),lastName:last.trim(),username,password:temporaryPassword,phone,active:true})}
     catch(err){setProfileError(err.message);return}
     setProfileMessage((language==='es'?'Perfil creado: ':'Profile created: ')+id+' · '+username)
-    setFirst('');setLast('');setTemporaryPassword('');setProfileError('')
+    setFirst('');setLast('');setBarberPhone('');setTemporaryPassword('');setProfileError('')
   }
   async function deleteBarber(id) {
     const profile=barbers.find(b=>b.id===id)
@@ -142,6 +147,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
       <form className="owner-profile-form" onSubmit={createBarber}>
         <label>{language==='es'?'Nombre':'First name'} *<input value={first} maxLength={70} onChange={e=>setFirst(e.target.value)} required /></label>
         <label>{language==='es'?'Apellido':'Last name'} *<input value={last} maxLength={70} onChange={e=>setLast(e.target.value)} required /></label>
+        <label>{language==='es'?'Teléfono del barbero (opcional)':'Barber phone (optional)'}<input type="tel" inputMode="tel" autoComplete="tel" placeholder="Ej. (570) 555-0100" maxLength={14} value={barberPhone} onChange={e=>{const d=e.target.value.replace(/\D/g,'').slice(0,10);setBarberPhone(d.length>6?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:d.length>3?`(${d.slice(0,3)}) ${d.slice(3)}`:d);setProfileError('')}} /></label>
         {!editingId && <label>{language==='es'?'Contraseña temporal (6 caracteres)':'Temporary password (6 characters)'} *<input type="password" autoComplete="new-password" maxLength={6} value={temporaryPassword} onChange={e=>setTemporaryPassword(e.target.value)} required /></label>}
         <div className="owner-profile-preview" aria-live="polite">
           <strong>{editingId?(language==='es'?'Editando perfil':'Editing profile'):(language==='es'?'Vista previa automática':'Automatic preview')}</strong>
