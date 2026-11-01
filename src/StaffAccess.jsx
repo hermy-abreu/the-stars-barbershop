@@ -92,15 +92,16 @@ export default function StaffAccess({language='es',onExit}) {
     if(role!=='owner')throw Error('Acceso restringido')
     await updateDoc(doc(db,'barbers',id),patch)
   }
-  async function toggleBarber(id){
+  async function deleteBarber(id){
     if(role!=='owner')throw Error('Acceso restringido')
-    const current=barbers.find(b=>b.id===id)
-    if(!current)throw Error('Barbero no encontrado')
-    const active=current.active===false
-    await updateDoc(doc(db,'barbers',id),{active})
-    await updateDoc(doc(db,'staff',id),{active})
+    const target=barbers.find(b=>b.id===id)
+    if(!target)throw Error('Barbero no encontrado')
+    // Revoke authorization first; Firebase Auth credentials cannot be deleted
+    // client-side for another user. The remaining Auth identity cannot log into Staff.
+    await deleteDoc(doc(db,'staff',id))
+    await deleteDoc(doc(db,'barbers',id))
   }
-  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onToggleBarber={toggleBarber}/>
+  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onDeleteBarber={deleteBarber}/>
 
   return <section className="barber-area"><div className="barber-login-card">
     <button type="button" className="barber-simple-link" onClick={onExit}>← {es?'Volver a la web':'Back to website'}</button>
