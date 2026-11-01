@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
 import StaffAccess from './StaffAccess'
-import { collection, onSnapshot, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { collection, onSnapshot, doc, runTransaction, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
 import { auth, db } from './firebase'
 
@@ -107,6 +107,7 @@ export default function App() {
     // Customer identity is anonymous; staff must always use their own signed-in account.
     await auth.authStateReady()
     if(!auth.currentUser) await signInAnonymously(auth)
+    if(!auth.currentUser.isAnonymous) throw new Error('Utiliza una sesión de cliente para reservar.')
     const slot = item.barberId+'_'+item.date+'_'+item.time
     await runTransaction(db, async transaction => {
       const target = doc(db,'appointments',slot)
@@ -114,12 +115,46 @@ export default function App() {
       transaction.set(target,{
         barberId:item.barberId,first:item.first,last:item.last,
         phone:item.phone||'',date:item.date,time:item.time,
-        service:item.service,walkIn:false,createdAt:serverTimestamp()
+        service:item.service,walkIn:false,bookingOwnerUid:auth.currentUser.uid,createdAt:serverTimestamp()
       })
     })
     const record={...item,id:slot}
     setLatestBooking(record)
     return record
+  }
+  async function findBookings({first,last,phone}) {
+    await auth.authStateReady()
+    if(!auth.currentUser) await signInAnonymously(auth)
+    if(!auth.currentUser.isAnonymous) throw new Error('Abre esta página en una sesión de cliente.')
+    const results=await getDocs(query(collection(db,'appointments'),where('bookingOwnerUid','==',auth.currentUser.uid)))
+    const normalize=v=>String(v||'').trim().toLocaleLowerCase()
+    const digits=v=>String(v||'').replace(/\\D/g,'')
+    return results.docs.map(d=>({id:d.id,...d.data()})).filter(a=>
+      normalize(a.first)===normalize(first)&&normalize(a.last)===normalize(last)&&digits(a.phone)===digits(phone)
+    ).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
+  }
+  async function changeBooking(booking,next) {
+    await auth.authStateReady()
+    if(!auth.currentUser?.isAnonymous||booking.bookingOwnerUid!==auth.currentUser.uid)throw new Error('La sesión no tiene acceso a esta reserva.')
+    const oldId=booking.id, newId=booking.barberId+'_'+next.date+'_'+next.time
+    await runTransaction(db,async tx=>{
+      const original=doc(db,'appointments',oldId)
+      const snap=await tx.get(original)
+      if(!snap.exists()||snap.data().bookingOwnerUid!==auth.currentUser.uid)throw new Error('La cita no está disponible.')
+      if(oldId!==newId){
+        const destination=doc(db,'appointments',newId)
+        if((await tx.get(destination)).exists())throw new Error('Ese horario ya está ocupado.')
+        tx.set(destination,{...snap.data(),date:next.date,time:next.time})
+        tx.delete(original)
+      }else{
+        throw new Error('Selecciona una fecha u hora diferente.')
+      }
+    })
+  }
+  async function cancelBooking(booking) {
+    await auth.authStateReady()
+    if(!auth.currentUser?.isAnonymous||booking.bookingOwnerUid!==auth.currentUser.uid)throw new Error('Esta sesión no puede cancelar la reserva.')
+    await deleteDoc(doc(db,'appointments',booking.id))
   }
   // El idioma se detecta automáticamente al cargar la PWA.
   // La interfaz ya no ofrece un selector manual EN/ES.
@@ -301,7 +336,7 @@ export default function App() {
           </div>
         </section>
 
-        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={createBooking} />
+        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={createBooking} onFindAppointments={findBookings} onChangeAppointment={changeBooking} onCancelAppointment={cancelBooking} />
       </main>
       {!installed && <section className="install-invite" aria-label="Install The Stars Barbershop">
         <h2>THE STARS BARBERSHOP</h2>
