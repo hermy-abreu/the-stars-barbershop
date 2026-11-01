@@ -71,7 +71,7 @@ const WORDS = {
   },
 }
 
-export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments, authenticatedBarber=null, onLogout=()=>{} }) {
+export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments, authenticatedBarber=null, onLogout=()=>{}, staffError='' }) {
   const t = WORDS[language] || WORDS.en
   const locale = language === 'es' ? 'es-US' : 'en-US'
   // Perfiles ficticios compartidos por las pantallas Staff y propietario.
@@ -248,6 +248,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
           <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF</p><h2>{t.dashboard}</h2><p>{currentBarber?.alias || currentBarber?.name || (language==='es'?'Mi agenda':'My schedule')}</p></div>
           <div className="barber-header-actions"><button type="button" onClick={openProfile} aria-label="Editar mi perfil profesional">👤 {language === 'es' ? 'Mi perfil' : 'My profile'}</button><button type="button" onClick={onExit}>{t.back}</button><button type="button" onClick={signOut}>{t.logout}</button></div>
         </header>
+        {staffError && <p role="alert" className="barber-error">{staffError}</p>}
         {/* Agenda semanal: nombre completo y detalles al pulsar. */}
         <div className="barber-calendar-layout barber-calendar-layout-weekly">
           <article className="barber-card barber-calendar-card">
