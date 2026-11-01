@@ -240,3 +240,14 @@
 .barber-time-appointment:focus-visible,.barber-week-header:focus-visible { outline:3px solid #b18a37; outline-offset:1px; }
 @media(max-width:950px) { .barber-calendar-layout-weekly { display:flex!important; flex-direction:column!important; } .barber-calendar-layout-weekly .barber-calendar-card { order:0!important; } .barber-calendar-layout-weekly .barber-appointments { order:1!important; } .barber-week-scroll { max-height:65dvh; } .barber-week-grid { min-width:850px; grid-template-columns:65px repeat(7,minmax(112px,1fr)); } }
 @media(max-width:480px) { .barber-week-scroll { max-height:60dvh; } .barber-modal-overlay { overscroll-behavior:contain; } .barber-modal { max-height:calc(100dvh - 20px)!important; } }
+
+/* Approved weekly layout: fit the seven columns without horizontal page scrolling. */
+.barber-calendar-layout-weekly{grid-template-columns:minmax(0,1.65fr) minmax(250px,.8fr)}
+.barber-calendar-layout-weekly .barber-calendar-card,.barber-calendar-layout-weekly .barber-appointments{min-width:0}
+.barber-week-scroll{width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto}
+.barber-week-grid{min-width:0!important;width:100%;grid-template-columns:minmax(48px,64px) repeat(7,minmax(0,1fr))!important}
+.barber-week-header{font-size:clamp(9px,.78vw,12px);padding:9px 1px;min-width:0}
+.barber-time-cell{min-width:0;overflow:hidden}
+.barber-time-appointment{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(9px,.77vw,12px)}
+@media(max-width:950px){.barber-week-grid{min-width:0!important;grid-template-columns:minmax(42px,58px) repeat(7,minmax(0,1fr))!important}.barber-week-scroll{overflow-x:hidden}.barber-week-header{font-size:11px}}
+@media(max-width:560px){.barber-week-grid{grid-template-columns:42px repeat(7,minmax(0,1fr))!important}.barber-week-header{font-size:9px;padding:7px 0}.barber-hour-label{font-size:9px;padding:5px 1px}.barber-time-appointment{font-size:9px;padding:3px 1px}.barber-calendar-card{padding:8px!important}}
