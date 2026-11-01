@@ -71,12 +71,12 @@ const WORDS = {
   },
 }
 
-export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments }) {
+export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments, authenticatedBarber=null, onLogout=()=>{} }) {
   const t = WORDS[language] || WORDS.en
   const locale = language === 'es' ? 'es-US' : 'en-US'
   // Perfiles ficticios compartidos por las pantallas Staff y propietario.
   // Al recargar vuelven a su estado inicial (no existe base de datos).
-  const [account, setAccount] = useState(null)
+  const [account, setAccount] = useState(authenticatedBarber)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
@@ -94,7 +94,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const [modalError, setModalError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [profileOpen,setProfileOpen] = useState(false)
-  const currentBarber = barbers.find(b=>b.id===account?.id)
+  const currentBarber = barbers.find(b=>b.id===account?.id) || authenticatedBarber
   const [profileDraft,setProfileDraft] = useState(null)
   function openProfile(){setProfileDraft({...currentBarber});setProfileOpen(true)}
   function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,alias:profileDraft.alias||'',phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
@@ -184,7 +184,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     setViewMonth(new Date(fromIso(shopToday()).getFullYear(), fromIso(shopToday()).getMonth(), 1))
     setWalkinFirst(''); setWalkinLast(''); closeModal()
   }
-  function signOut() { setAccount(null); setUsername(''); setPassword(''); closeModal() }
+  function signOut() { if(authenticatedBarber){onLogout();return} setAccount(null); setUsername(''); setPassword(''); closeModal() }
 
   if (!account) return (
     <section className="barber-area" aria-label={t.heading}>
