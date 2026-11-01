@@ -167,11 +167,13 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   }
 
   const chosenBarber = visibleBarbers.find((person) => person.id === barber)
+  const shopPhone = (import.meta.env.VITE_SHOP_PHONE || '').trim()
+  const busyMessage = language==='es' ? `El barbero ${chosenBarber?.name||'seleccionado'} ya tiene una cita agendada para las ${displayTime(time)} del ${date}. Selecciona otro horario. Si tienes alguna inquietud, comunícate con el barbero o con la barbería.` : `${chosenBarber?.name||'The selected barber'} already has an appointment at ${displayTime(time)} on ${date}. Choose a different time. If you have questions, contact the barber or the barbershop.`
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
   async function saveDemoAppointment(){
     if(saved || saveLock.current || !chosenBarber || !date || !isOpenSlot(date,time) || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
-    if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time && !a.walkIn)) {setError(language==='es'?'Horario ya ocupado para este barbero.':'Time already reserved for this barber.');return}
+    if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time)) {setError(busyMessage);return}
     saveLock.current=true
     try {
       if(typeof onCreateAppointment!=='function') throw new Error('El guardado no está conectado al módulo principal.')
@@ -180,7 +182,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
       setSavedRecord(record)
       setSaved(true)
       setError('')
-    } catch (failure) {saveLock.current=false;setError(language==='es'?'No se pudo guardar esta cita. Vuelve a intentarlo.':'Could not save this booking. Please try again.');console.error(failure)}
+    } catch (failure) {saveLock.current=false;const code=failure?.code||'';setError(code==='permission-denied'||code==='already-exists' ? busyMessage : (language==='es'?'No se pudo guardar esta cita. Vuelve a intentarlo.':'Could not save this booking. Please try again.'));console.error(failure)}
   }
   async function searchBooking(event){
     event.preventDefault()
@@ -328,7 +330,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
           {['instagram','facebook','tiktok','youtube'].filter(k=>profileToView[k]).map(k=><p key={k}><strong>{k[0].toUpperCase()+k.slice(1)}:</strong> {profileToView[k]}</p>)}
           <button type="button" className="cb-next" onClick={()=>{setBarber(profileToView.id);setProfileToView(null)}}>{language==='es'?'Elegir este barbero':'Choose this barber'}</button>
         </section></div>}
-        {error && <p role="alert" className="cb-error">{error}</p>}
+        {error && <div role="alert" className="cb-error"><p>{error}</p>{error===busyMessage && <p>{chosenBarber?.phone && <span>{language==='es'?'Barbero':'Barber'}: <a href={'tel:'+chosenBarber.phone}>{chosenBarber.phone}</a><br/></span>}{shopPhone && <span>{language==='es'?'Barbería':'Barbershop'}: <a href={'tel:'+shopPhone}>{shopPhone}</a></span>}</p>}</div>}
         <div className={`cb-actions ${step === 4 ? 'cb-actions-summary' : ''}`}>
           {step > 0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={() => navigate(step - 1)}>← {t.back}</button>}
           {step < 4 ? <>
