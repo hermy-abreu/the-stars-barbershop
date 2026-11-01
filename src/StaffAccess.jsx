@@ -28,6 +28,23 @@ export default function StaffAccess({language='es',onExit}) {
     const stopBookings=onSnapshot(source,snap=>setAppointments(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
     return ()=>{stopBarbers();stopBookings()}
   },[role,user])
+  // Owner reconciles privacy-safe occupied-slot markers for previously stored appointments.
+  useEffect(()=>{
+    if(role!=='owner'||!appointments.length)return
+    let cancelled=false
+    ;(async()=>{
+      for(const a of appointments){
+        if(cancelled)break
+        if(a.walkIn || !/^\\d{2}:(00|30)$/.test(a.time||''))continue
+        const slot=String(a.id)
+        try{
+          const marker=doc(db,'occupiedSlots',slot)
+          if(!(await getDoc(marker)).exists())await setDoc(marker,{occupied:true})
+        }catch(e){if(!cancelled)setError('No se pudo sincronizar la disponibilidad: '+e.message)}
+      }
+    })()
+    return ()=>{cancelled=true}
+  },[role,appointments])
   useEffect(()=>{
     let alive=true
     const unsubscribe=onAuthStateChanged(auth,async candidate=>{
