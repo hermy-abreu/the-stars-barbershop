@@ -10,7 +10,7 @@ import ClientBooking from './ClientBooking'
 import StaffAccess from './StaffAccess'
 import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
-import { auth, db } from './firebase'
+import { db, customerAuth, customerDb } from './firebase'
 
 // Datos editables: confirmar la dirección con el cliente antes de publicar.
 const SHOP = {
@@ -111,25 +111,25 @@ export default function App() {
   async function createBooking(item) {
     if(!validBusinessSlot(item.date,item.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
     // Customer identity is anonymous; staff must always use their own signed-in account.
-    await auth.authStateReady()
-    if(!auth.currentUser) await signInAnonymously(auth)
-    if(!auth.currentUser.isAnonymous) throw new Error('Utiliza una sesión de cliente para reservar.')
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser) await signInAnonymously(customerAuth)
+    if(!customerAuth.currentUser.isAnonymous) throw new Error('Utiliza una sesión de cliente para reservar.')
     const slot = item.barberId+'_'+item.date+'_'+item.time
     // Firestore permits CREATE on a free slot and denies UPDATE on an occupied one.
-    await setDoc(doc(db,'appointments',slot),{
+    await setDoc(doc(customerDb,'appointments',slot),{
       barberId:item.barberId,first:item.first,last:item.last,
       phone:item.phone||'',date:item.date,time:item.time,
-      service:item.service,walkIn:false,bookingOwnerUid:auth.currentUser.uid,createdAt:serverTimestamp()
+      service:item.service,walkIn:false,bookingOwnerUid:customerAuth.currentUser.uid,createdAt:serverTimestamp()
     })
     const record={...item,id:slot}
     setLatestBooking(record)
     return record
   }
   async function findBookings({first,last,phone}) {
-    await auth.authStateReady()
-    if(!auth.currentUser) await signInAnonymously(auth)
-    if(!auth.currentUser.isAnonymous) throw new Error('Abre esta página en una sesión de cliente.')
-    const results=await getDocs(query(collection(db,'appointments'),where('bookingOwnerUid','==',auth.currentUser.uid)))
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser) await signInAnonymously(customerAuth)
+    if(!customerAuth.currentUser.isAnonymous) throw new Error('Abre esta página en una sesión de cliente.')
+    const results=await getDocs(query(collection(customerDb,'appointments'),where('bookingOwnerUid','==',customerAuth.currentUser.uid)))
     const normalize=v=>String(v||'').trim().toLocaleLowerCase()
     const digits=v=>String(v||'').replace(/\D/g,'')
     return results.docs.map(d=>({id:d.id,...d.data()})).filter(a=>
@@ -138,15 +138,15 @@ export default function App() {
   }
   async function changeBooking(booking,next) {
     if(!validBusinessSlot(next.date,next.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
-    await auth.authStateReady()
-    if(!auth.currentUser?.isAnonymous||booking.bookingOwnerUid!==auth.currentUser.uid)throw new Error('La sesión no tiene acceso a esta reserva.')
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser?.isAnonymous||booking.bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('La sesión no tiene acceso a esta reserva.')
     const oldId=booking.id, newId=booking.barberId+'_'+next.date+'_'+next.time
-    await runTransaction(db,async tx=>{
-      const original=doc(db,'appointments',oldId)
+    await runTransaction(customerDb,async tx=>{
+      const original=doc(customerDb,'appointments',oldId)
       const snap=await tx.get(original)
-      if(!snap.exists()||snap.data().bookingOwnerUid!==auth.currentUser.uid)throw new Error('La cita no está disponible.')
+      if(!snap.exists()||snap.data().bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('La cita no está disponible.')
       if(oldId!==newId){
-        const destination=doc(db,'appointments',newId)
+        const destination=doc(customerDb,'appointments',newId)
         tx.set(destination,{...snap.data(),date:next.date,time:next.time,createdAt:serverTimestamp()})
         tx.delete(original)
       }else{
@@ -155,9 +155,9 @@ export default function App() {
     })
   }
   async function cancelBooking(booking) {
-    await auth.authStateReady()
-    if(!auth.currentUser?.isAnonymous||booking.bookingOwnerUid!==auth.currentUser.uid)throw new Error('Esta sesión no puede cancelar la reserva.')
-    await deleteDoc(doc(db,'appointments',booking.id))
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser?.isAnonymous||booking.bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('Esta sesión no puede cancelar la reserva.')
+    await deleteDoc(doc(customerDb,'appointments',booking.id))
   }
   // El idioma se detecta automáticamente al cargar la PWA.
   // La interfaz ya no ofrece un selector manual EN/ES.
