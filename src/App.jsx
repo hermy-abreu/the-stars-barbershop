@@ -159,11 +159,14 @@ export default function App() {
         throw new Error('Selecciona una fecha u hora diferente.')
       }
     })
+    try { await setDoc(doc(customerDb,'occupiedSlots',newId),{occupied:true}) } catch(e) { console.warn('New availability flag pending:',e.code) }
+    try { await deleteDoc(doc(customerDb,'occupiedSlots',oldId)) } catch(e) { console.warn('Old availability flag cleanup pending:',e.code) }
   }
   async function cancelBooking(booking) {
     await customerAuth.authStateReady()
     if(!customerAuth.currentUser?.isAnonymous||booking.bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('Esta sesión no puede cancelar la reserva.')
     await deleteDoc(doc(customerDb,'appointments',booking.id))
+    try { await deleteDoc(doc(customerDb,'occupiedSlots',booking.id)) } catch(e) { console.warn('Availability cleanup pending:',e.code) }
   }
   // El idioma se detecta automáticamente al cargar la PWA.
   // La interfaz ya no ofrece un selector manual EN/ES.
