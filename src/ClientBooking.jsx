@@ -173,7 +173,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
       setSavedRecord(record)
       setSaved(true)
       setError('')
-    } catch (failure) {saveLock.current=false;setError(language==='es'?'No pudimos guardar esta cita de prueba. Vuelve a intentarlo.':'Could not save this demo booking. Please try again.');console.error(failure)}
+    } catch (failure) {saveLock.current=false;setError(language==='es'?'No se pudo guardar esta cita. Vuelve a intentarlo.':'Could not save this booking. Please try again.');console.error(failure)}
   }
   return (
     <section id="booking" ref={bookingRef} className="client-booking section">
@@ -249,7 +249,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
                   <div><dt>{t.service}</dt><dd>{t.names[service]}</dd></div>
                 </dl>
                 <p className="cb-warning">{saved ? t.confirmed + ' ' + (language==='es'?'(Reserva guardada en Firestore).':'(Saved in Firestore).') : t.warning}</p>
-                {saved && savedRecord && <p role="status" className="cb-warning"><strong>{language==='es'?'Reserva de prueba registrada':'Demo booking registered'} · #{savedRecord.id}</strong><br/>{chosenBarber?.name} · {savedRecord.date} · {savedRecord.time}<br/>{language==='es'?'Consulta esa misma fecha en Staff y en el panel del propietario.':'Check this date in Staff and the owner dashboard.'}</p>}
+                {saved && savedRecord && <p role="status" className="cb-warning"><strong>{language==='es'?'Cita registrada':'Booking saved'} · #{savedRecord.id}</strong><br/>{chosenBarber?.name} · {savedRecord.date} · {savedRecord.time}<br/>{language==='es'?'Consulta esa misma fecha en Staff y en el panel del propietario.':'Check this date in Staff and the owner dashboard.'}</p>}
 
               </div>
             )}
