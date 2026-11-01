@@ -167,7 +167,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   }
 
   const chosenBarber = visibleBarbers.find((person) => person.id === barber)
-  const shopPhone = (import.meta.env.VITE_SHOP_PHONE || '').trim()
+  const shopPhone = '570-817-3470'
   const busyMessage = language==='es' ? `El barbero ${chosenBarber?.name||'seleccionado'} ya tiene una cita agendada para las ${displayTime(time)} del ${date}. Selecciona otro horario. Si tienes alguna inquietud, comunícate con el barbero o con la barbería.` : `${chosenBarber?.name||'The selected barber'} already has an appointment at ${displayTime(time)} on ${date}. Choose a different time. If you have questions, contact the barber or the barbershop.`
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
