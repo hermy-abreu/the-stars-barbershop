@@ -2,6 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function authenticated() { return request.auth != null; }
+    function isAnonymous() { return authenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
     function profilePath() { return /databases/$(database)/documents/staff/$(request.auth.uid); }
     function isStaff() {
       return authenticated() && exists(profilePath())
@@ -60,7 +61,10 @@ service cloud.firestore {
       allow get: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid);
       allow list: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid);
       allow create: if validAppointment()
-        && (isOwner() || (isBarber() && request.resource.data.barberId == request.auth.uid))
+        && (isOwner() || (isBarber() && request.resource.data.barberId == request.auth.uid)
+          || (isAnonymous() && request.resource.data.walkIn == false
+            && exists(/databases/$(database)/documents/barbers/$(request.resource.data.barberId))
+            && get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.active == true))
         && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time;
       allow update: if false;
       allow delete: if isOwner() || (isBarber() && resource.data.barberId == request.auth.uid);
