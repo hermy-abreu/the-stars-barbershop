@@ -120,7 +120,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   },[viewMonth])
   const halfHours = useMemo(()=>{
     const weekStart=weekDays[0].date, weekEnd=weekDays[6].date
-    const outsideHours=ownAppointments.filter(a=>a.walkIn&&a.date>=weekStart&&a.date<=weekEnd&&/^\\d{2}:\\d{2}$/.test(a.time||'')).map(a=>{
+    const outsideHours=ownAppointments.filter(a=>a.walkIn&&a.date>=weekStart&&a.date<=weekEnd&&/^[0-9]{2}:[0-9]{2}$/.test(a.time||'')).map(a=>{
       const [hour,minute]=a.time.split(':').map(Number)
       return hour*60+Math.floor(minute/30)*30
     })
