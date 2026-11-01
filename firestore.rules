@@ -56,7 +56,9 @@ service cloud.firestore {
     }
     match /barbers/{barberId} {
       allow read: if true;
-      allow create, update, delete: if isOwner();
+      allow create, delete: if isOwner();
+      allow update: if isOwner() || (isBarber() && request.auth.uid == barberId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alias','phone','photo','instagram','facebook','tiktok','youtube']));
     }
     match /appointments/{slot} {
       function ownsBooking() {
