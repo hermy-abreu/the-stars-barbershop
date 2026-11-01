@@ -52,7 +52,7 @@ const WORDS = {
     conflict: 'Selecciona otro horario antes de guardar.',
     walkinNote: 'Los Walk-in se registran hoy a la hora actual, aunque haya una cita cercana.', walkinOnlyToday: 'Solo puedes registrar Walk-in en el día actual.',
     reserved: 'Con cita', walkinType: 'Sin cita', notSaved: '',
-    back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: 'La jornada laboral real se configurará con el propietario.',
+    back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: '',
   },
   en: {
     heading: 'Barber access', demo: 'Appointments synchronized with Firebase.',
@@ -67,7 +67,7 @@ const WORDS = {
     conflict: 'Choose another time before saving.',
     walkinNote: 'Walk-ins are recorded today at the current time, even near booked appointments.', walkinOnlyToday: 'Walk-ins can only be added for today.',
     reserved: 'Booked', walkinType: 'Walk-in', notSaved: '',
-    back: 'Back to website', saveChanges: 'Save changes', noWorkingSchedule: 'Real working schedules will be configured with the owner.',
+    back: 'Back to website', saveChanges: 'Save changes', noWorkingSchedule: '',
   },
 }
 
@@ -82,7 +82,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const [loginError, setLoginError] = useState('')
   const appointmentListRef = useRef(null)
   function revealList(){ if(window.matchMedia('(max-width:950px)').matches) requestAnimationFrame(()=>appointmentListRef.current?.scrollIntoView({behavior:'smooth',block:'start'})) }
-  const [selectedDay, setSelectedDay] = useState(() => isoDate(new Date()))
+  const [selectedDay, setSelectedDay] = useState(() => new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))
   const [viewMonth, setViewMonth] = useState(() => new Date())
   const [selectedId, setSelectedId] = useState(null)
   const [editing, setEditing] = useState(false)
@@ -179,7 +179,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     if (overlap && !selectedAppointment.walkIn) { setModalError(t.overlap); return }
     setAppointments(current => current.map(a => a.id === selectedId && a.barberId === account.id ? { ...a, date: draftDate, time: draftTime } : a))
     setSelectedDay(draftDate)
-    setViewMonth(new Date(fromIso(draftDate).getFullYear(), fromIso(draftDate).getMonth(), 1))
+    setViewMonth(fromIso(draftDate))
     closeModal()
   }
   function deleteAppointment() {
@@ -201,7 +201,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
       service: '', walkIn: true,
     }])
     setSelectedDay(shopToday())
-    setViewMonth(new Date(fromIso(shopToday()).getFullYear(), fromIso(shopToday()).getMonth(), 1))
+    setViewMonth(fromIso(shopToday()))
     setWalkinFirst(''); setWalkinLast(''); closeModal()
   }
   function signOut() { if(authenticatedBarber){onLogout();return} setAccount(null); setUsername(''); setPassword(''); closeModal() }
@@ -254,8 +254,8 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
             <div className="barber-month-controls">
               <button type="button" className="barber-today" onClick={() => { const now=shopToday(); setSelectedDay(now); setViewMonth(fromIso(now)) }}>{t.today}</button>
               <div className="barber-month-navigation">
-                <button type="button" onClick={() => setViewMonth(d => fromIso(shiftDate(isoDate(d), -7)))} aria-label={language==='es'?'Semana anterior':'Previous week'}>‹</button>
-                <button type="button" onClick={() => setViewMonth(d => fromIso(shiftDate(isoDate(d), 7)))} aria-label={language==='es'?'Semana siguiente':'Next week'}>›</button>
+                <button type="button" onClick={() => {setViewMonth(d => fromIso(shiftDate(isoDate(d), -7)));setSelectedDay(d=>shiftDate(d,-7))}} aria-label={language==='es'?'Semana anterior':'Previous week'}>‹</button>
+                <button type="button" onClick={() => {setViewMonth(d => fromIso(shiftDate(isoDate(d), 7)));setSelectedDay(d=>shiftDate(d,7))}} aria-label={language==='es'?'Semana siguiente':'Next week'}>›</button>
               </div>
               <h3 className="barber-month-title">{language==='es'?'Semana del':'Week of'} {weekDays[0].date} — {weekDays[6].date}</h3>
             </div>
