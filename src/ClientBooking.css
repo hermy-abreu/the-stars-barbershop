@@ -124,3 +124,11 @@
 @media(max-width:560px) { .cb-search-panel { padding:15px; } .cb-booking-modes { gap:8px; } }
 
 .cb-time-selectors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}.cb-time-selectors label{display:flex;flex-direction:column;gap:7px;min-width:0;font-weight:700}.cb-time-selectors select{width:100%;min-width:0;border:1px solid #ccd2db;border-radius:9px;background:#fff;color:#142238;padding:12px;font:inherit}@media(max-width:460px){.cb-time-selectors{gap:7px}.cb-time-selectors select{padding:10px 5px}}
+
+/* Search / modify booking controls use the approved booking-action visual standard. */
+.cb-search-panel .cb-search-back,.cb-search-panel .cb-search-submit{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:11px 24px;border-radius:10px;font:inherit;font-size:15px;font-weight:800;line-height:1.3;cursor:pointer;transition:filter .15s ease,transform .15s ease}
+.cb-search-panel .cb-search-back{background:#fff;border:1px solid #cad0d9;color:#101b35;margin-bottom:14px}
+.cb-search-panel .cb-search-submit{width:100%;background:linear-gradient(110deg,#f5d782,#d69b28);border:1px solid #bd8c2a;color:#101827;margin-top:6px}
+.cb-search-panel .cb-search-back:focus-visible,.cb-search-panel .cb-search-submit:focus-visible{outline:3px solid #bd8c2a;outline-offset:3px}
+.cb-search-panel .cb-search-submit:disabled{opacity:.6;cursor:not-allowed}
+@media(max-width:560px){.cb-search-panel .cb-search-back,.cb-search-panel .cb-search-submit{font-size:14px;min-height:48px;padding:11px 14px}}
