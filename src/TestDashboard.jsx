@@ -77,7 +77,7 @@ export default function TestDashboard({user,role,language='es'}) {
      <label>Initial password <input type="password" required minLength={6} value={pass} onChange={e=>setPass(e.target.value)}/></label>
      <button disabled={busy}>Create barber</button>
    </form>}
-   <form onSubmit={createAppointment}><h3>Register appointment</h3>
+   {!owner&&<form onSubmit={createAppointment}><h3>Register appointment</h3>
      {owner&&<label>Barber <select value={barberId} required onChange={e=>setBarberId(e.target.value)}>
        <option value="">Select barber</option>{barbers.filter(b=>b.active).map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
      </select></label>}
@@ -88,11 +88,11 @@ export default function TestDashboard({user,role,language='es'}) {
      <label>Service <input value={service} onChange={e=>setService(e.target.value)}/></label>
      <label>Walk-in <input type="checkbox" checked={walkIn} onChange={e=>{setWalkIn(e.target.checked);if(e.target.checked)setDate(today())}}/></label>
      <button disabled={busy}>Save in Firestore</button>
-   </form>
-   <h3>Saved appointments</h3>
-   <div style={{overflowX:'auto'}}><table><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Service</th><th></th></tr></thead><tbody>
+   </form>}
+   {!owner&&<h3>Saved appointments</h3>}
+   {!owner&&<div style={{overflowX:'auto'}}><table><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Service</th><th></th></tr></thead><tbody>
      {appointments.map(a=><tr key={a.id}><td>{a.date}</td><td>{a.time}</td><td>{a.first} {a.last}</td><td>{a.service}</td>
       <td><button onClick={()=>remove(a.id)}>Delete</button></td></tr>)}
-   </tbody></table></div>
+   </tbody></table></div>}
  </div>
 }
