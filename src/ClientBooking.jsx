@@ -24,8 +24,8 @@ const i18n = {
     steps: ['Tus datos', 'Barbero', 'Fecha y hora', 'Servicio', 'Resumen'],
     next: 'Siguiente', back: 'Anterior', restart: 'Comenzar de nuevo',
     first: 'Nombre', last: 'Apellido', phone: 'Número de teléfono',
-    help: 'Estos datos se usarán para identificar tu reserva cuando el sistema esté activo.',
-    barberHelp: 'Selecciona uno de los perfiles activos de demostración.',
+    help: 'Introduce los datos de la persona que recibirá el servicio.',
+    barberHelp: 'Selecciona tu barbero.',
     date: 'Fecha', time: 'Hora', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
     groups: { adults: 'Cortes y arreglos', kids: 'Servicios para niños', other: 'Otras opciones' },
     names: {
@@ -49,8 +49,8 @@ const i18n = {
     steps: ['Your details', 'Barber', 'Date & time', 'Service', 'Summary'],
     next: 'Next', back: 'Back', restart: 'Start again',
     first: 'First name', last: 'Last name', phone: 'Phone number',
-    help: 'These details will identify your booking when the system goes live.',
-    barberHelp: 'Choose an active demo barber profile.',
+    help: 'Enter the details of the person receiving the service.',
+    barberHelp: 'Choose your barber.',
     date: 'Date', time: 'Hour', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
     groups: { adults: 'Haircuts & grooming', kids: "Kids' services", other: 'Other' },
     names: {
@@ -60,7 +60,7 @@ const i18n = {
       kidslineup: 'Kids Line Up', other: 'Other / Not sure',
     },
     required: 'Complete all required fields to continue.',
-    phoneError: 'Enter a valid 10 to 15 digit mobile number.',
+    phoneError: 'Enter a valid 10-digit phone number.',
     dateError: 'Choose today or a future date.',
     barberError: 'Choose a barber.', timeError: 'Choose a time.',
     serviceError: 'Choose a service.',
@@ -71,8 +71,7 @@ const i18n = {
 }
 
 function todayLocal() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
 }
 
 /** Imagen opcional: si el archivo JPG aún no existe, se muestran iniciales. */
