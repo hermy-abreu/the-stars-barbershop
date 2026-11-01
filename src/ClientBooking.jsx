@@ -218,7 +218,6 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
       <div className="container cb-container">
         <p className="cb-eyebrow">THE STARS BARBERSHOP</p>
         <h2>{t.title}</h2>
-        <p className="cb-demo" role="note">{t.demo}</p>
         {mode==='find' && <div className="cb-search-panel">
           <button type="button" className="cb-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar':'Add'}</button>
           <form className="cb-fields" onSubmit={searchBooking}>
@@ -277,7 +276,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
 
             {step === 2 && (
               <div className="cb-fields">
-                <label>{t.date}<input type="date" min={todayLocal()} value={date} onChange={(e) => { setDate(e.target.value); setTime(''); setError('') }} /></label>
+                <label>{t.date}<input type="date" min={todayLocal()} value={date} onChange={(e) => { setDate(e.target.value); setTime('10:00'); setError('') }} /></label>
                 <p className="cb-help">{language==='es'?'Lunes a sábado, 10:00 AM–7:00 PM. Última reserva a las 6:30 PM. Domingo cerrado.':'Monday–Saturday, 10:00 AM–7:00 PM. Last booking at 6:30 PM. Closed Sunday.'}</p>
                 <div className="cb-time-selectors">
                   <label>{language==='es'?'Hora':'Hour'}<select value={from24(time).hour} onChange={e=>{setTime(to24(e.target.value,from24(time).minutes,from24(time).period));setError('')}}>{Array.from({length:12},(_,i)=><option value={String(i+1)} key={i}>{i+1}</option>)}</select></label>
