@@ -217,11 +217,8 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         <p className="cb-eyebrow">THE STARS BARBERSHOP</p>
         <h2>{t.title}</h2>
         <p className="cb-demo" role="note">{t.demo}</p>
-        <div className="cb-booking-modes" role="group" aria-label="Booking options">
-          <button type="button" className={mode==='add'?'cb-next':'cb-back'} onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>{language==='es'?'Agregar cita':'Add booking'}</button>
-          <button type="button" className={mode==='find'?'cb-next':'cb-back'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Buscar cita':'Find booking'}</button>
-        </div>
         {mode==='find' && <div className="cb-search-panel">
+          <button type="button" className="cb-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar cita':'Add booking'}</button>
           <form className="cb-fields" onSubmit={searchBooking}>
             <label>{t.first} *<input value={first} autoComplete="given-name" onChange={e=>setFirst(e.target.value)}/></label>
             <label>{t.last} *<input value={last} autoComplete="family-name" onChange={e=>setLast(e.target.value)}/></label>
@@ -329,7 +326,10 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
         {error && <p role="alert" className="cb-error">{error}</p>}
         <div className={`cb-actions ${step === 4 ? 'cb-actions-summary' : ''}`}>
           {step > 0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={() => navigate(step - 1)}>← {t.back}</button>}
-          {step < 4 ? <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{t.next} →</button> : <>
+          {step < 4 ? <>
+            <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{step===0?(language==='es'?'Agregar cita':'Add booking'):t.next} →</button>
+            {step===0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Buscar cita':'Find booking'}</button>}
+          </> : <>
             <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
             <button type="button" className="cb-back cb-restart" onClick={reset}>{t.restart} ↻</button>
           </>}
