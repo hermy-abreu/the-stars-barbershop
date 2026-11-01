@@ -3,6 +3,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebas
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
 import './BarberDashboard.css'
+import TestDashboard from './TestDashboard'
 
 // The legacy demo dashboards are intentionally not exposed here.
 // Only server-authorized roles may be used when real dashboards are connected.
@@ -48,7 +49,7 @@ export default function StaffAccess({language='es',onExit}) {
       <label>{es?'Contraseña':'Password'}<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
       <button type="submit" className="barber-gold-button">{es?'Entrar':'Sign in'}</button>
     </form>
-    : <div><p>{role ? (es?'Cuenta verificada; panel seguro pendiente de conexión.':'Verified account; secure dashboard pending integration.')
+    : <div>{role && <TestDashboard user={user} role={role} language={language}/>}<p>{role ? (es?'Acceso verificado.':'Verified access.')
       : (es?'Acceso restringido: falta un rol autorizado.':'Access restricted: authorized role missing.')}</p>
       <button type="button" onClick={()=>signOut(auth)}>{es?'Cerrar sesión':'Sign out'}</button>
     </div>}
