@@ -128,7 +128,7 @@ export default function App() {
     if(!auth.currentUser.isAnonymous) throw new Error('Abre esta página en una sesión de cliente.')
     const results=await getDocs(query(collection(db,'appointments'),where('bookingOwnerUid','==',auth.currentUser.uid)))
     const normalize=v=>String(v||'').trim().toLocaleLowerCase()
-    const digits=v=>String(v||'').replace(/\\D/g,'')
+    const digits=v=>String(v||'').replace(/\D/g,'')
     return results.docs.map(d=>({id:d.id,...d.data()})).filter(a=>
       normalize(a.first)===normalize(first)&&normalize(a.last)===normalize(last)&&digits(a.phone)===digits(phone)
     ).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
