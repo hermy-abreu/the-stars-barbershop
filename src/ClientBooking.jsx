@@ -13,7 +13,9 @@ const GROUPS = [
   { id: 'kids', ids: ['kidscut', 'kidsfade', 'kidslineup'] },
   { id: 'other', ids: ['other'] },
 ]
-const DEMO_TIMES = Array.from({length: 33}, (_, i) => { const minutes=6*60+i*30; return `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}` })
+const to24=(hour,minutes,period)=>`${String((Number(hour)%12)+(period==='PM'?12:0)).padStart(2,'0')}:${minutes}`
+const from24=value=>{const hour=Number((value||'10:00').split(':')[0]);return {hour:String(hour%12||12),minutes:(value||'10:00').split(':')[1]||'00',period:hour>=12?'PM':'AM'}}
+const isOpenSlot=(day,value)=>{if(!day||!value)return false;const date=new Date(day+'T12:00:00');const weekday=date.getDay();return weekday!==0 && value>='10:00'&&value<='18:30'&&['00','30'].includes(value.slice(3))}
 
 const i18n = {
   es: {
@@ -103,7 +105,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   const [phone, setPhone] = useState('')
   const [barber, setBarber] = useState('')
   const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
+  const [time, setTime] = useState('10:00')
   const [service, setService] = useState('')
   const [error, setError] = useState('')
   const [profileToView,setProfileToView] = useState(null)
@@ -122,7 +124,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
     if (step === 1 && !barber) return t.barberError
     if (step === 2) {
       if (!date || date < todayLocal()) return t.dateError
-      if (!time) return t.timeError
+      if (!time || !isOpenSlot(date,time)) return language==='es'?'Negocio cerrado. Atendemos de lunes a sábado, de 10:00 AM a 7:00 PM. Última cita: 6:30 PM.':'Business closed. Open Monday–Saturday, 10:00 AM–7:00 PM. Last booking: 6:30 PM.'
     }
     if (step === 3 && !service) return t.serviceError
     return ''
@@ -160,14 +162,14 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   function reset() {
     saveLock.current=false; setSaved(false); setSavedRecord(null); setStep(0); setPhase('idle'); setError('')
     setFirst(''); setLast(''); setPhone(''); setBarber('')
-    setDate(''); setTime(''); setService('')
+    setDate(''); setTime('10:00'); setService('')
   }
 
   const chosenBarber = visibleBarbers.find((person) => person.id === barber)
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
   async function saveDemoAppointment(){
-    if(saved || saveLock.current || !chosenBarber || !date || !time || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
+    if(saved || saveLock.current || !chosenBarber || !date || !isOpenSlot(date,time) || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
     if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time && !a.walkIn)) {setError(language==='es'?'Horario ya ocupado para este barbero.':'Time already reserved for this barber.');return}
     saveLock.current=true
     try {
@@ -276,9 +278,11 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
             {step === 2 && (
               <div className="cb-fields">
                 <label>{t.date}<input type="date" min={todayLocal()} value={date} onChange={(e) => { setDate(e.target.value); setTime(''); setError('') }} /></label>
-                <p className="cb-help">{t.timeHelp}</p>
-                <div className="cb-time-grid" aria-label={t.time}>
-                  {DEMO_TIMES.map((slot) => <button key={slot} type="button" aria-pressed={time === slot} className={time === slot ? 'selected' : ''} onClick={() => { setTime(slot); setError('') }}>{slot}</button>)}
+                <p className="cb-help">{language==='es'?'Lunes a sábado, 10:00 AM–7:00 PM. Última reserva a las 6:30 PM. Domingo cerrado.':'Monday–Saturday, 10:00 AM–7:00 PM. Last booking at 6:30 PM. Closed Sunday.'}</p>
+                <div className="cb-time-selectors">
+                  <label>{language==='es'?'Hora':'Hour'}<select value={from24(time).hour} onChange={e=>{setTime(to24(e.target.value,from24(time).minutes,from24(time).period));setError('')}}>{Array.from({length:12},(_,i)=><option value={String(i+1)} key={i}>{i+1}</option>)}</select></label>
+                  <label>{language==='es'?'Minutos':'Minutes'}<select value={from24(time).minutes} onChange={e=>{setTime(to24(from24(time).hour,e.target.value,from24(time).period));setError('')}}><option value="00">00</option><option value="30">30</option></select></label>
+                  <label>AM / PM<select value={from24(time).period} onChange={e=>{setTime(to24(from24(time).hour,from24(time).minutes,e.target.value));setError('')}}><option value="AM">AM</option><option value="PM">PM</option></select></label>
                 </div>
               </div>
             )}
@@ -307,8 +311,8 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
                   <div><dt>{t.time}</dt><dd>{time}</dd></div>
                   <div><dt>{t.service}</dt><dd>{t.names[service]}</dd></div>
                 </dl>
-                <p className="cb-warning">{saved ? t.confirmed + ' ' + (language==='es'?'(Reserva guardada en Firestore).':'(Saved in Firestore).') : t.warning}</p>
-                {saved && savedRecord && <p role="status" className="cb-warning"><strong>{language==='es'?'Cita registrada':'Booking saved'} · #{savedRecord.id}</strong><br/>{chosenBarber?.name} · {savedRecord.date} · {savedRecord.time}<br/>{language==='es'?'Consulta esa misma fecha en Staff y en el panel del propietario.':'Check this date in Staff and the owner dashboard.'}</p>}
+                <p className="cb-warning">{saved ? t.confirmed : (language==='es'?'Verifica los datos antes de confirmar.':'Review the details before confirming.')}</p>
+
 
               </div>
             )}
@@ -331,7 +335,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
             <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{step===0?(language==='es'?'Agregar':'Add'):t.next} →</button>
             {step===0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Modificar':'Modify'}</button>}
           </> : <>
-            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
+            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !isOpenSlot(date,time) || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
             <button type="button" className="cb-back cb-restart" onClick={reset}>{t.restart} ↻</button>
           </>}
         </div>
