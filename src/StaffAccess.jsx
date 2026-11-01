@@ -62,11 +62,7 @@ export default function StaffAccess({language='es',onExit}) {
         const before=previous.get(id)
         if(!before){
           const slot=user.uid+'_'+a.date+'_'+a.time
-          await runTransaction(db,async tx=>{
-            const target=doc(db,'appointments',slot)
-            if((await tx.get(target)).exists())throw Error('El horario está ocupado')
-            tx.set(target,{barberId:user.uid,first:a.first,last:a.last,phone:a.phone||'',date:a.date,time:a.time,service:a.service||'',walkIn:!!a.walkIn,createdAt:serverTimestamp()})
-          })
+          await setDoc(doc(db,'appointments',slot),{barberId:user.uid,first:a.first,last:a.last,phone:a.phone||'',date:a.date,time:a.time,service:a.service||'',walkIn:!!a.walkIn,createdAt:serverTimestamp()})
         } else if(before.date!==a.date||before.time!==a.time){
           throw Error('El cambio de fecha y hora requiere habilitar las reglas de modificación.')
         }
