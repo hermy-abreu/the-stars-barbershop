@@ -88,7 +88,7 @@ function BarberCard({ barber, selected, onSelect, onProfile, t }) {
   )
 }
 
-export default function ClientBooking({ language = 'en', barbers=[], appointments=[], onCreateAppointment, onFindAppointments, onChangeAppointment, onCancelAppointment, latestBooking=null }) {
+export default function ClientBooking({ language = 'en', barbers=[], appointments=[], onCreateAppointment, onCheckSlot, onFindAppointments, onChangeAppointment, onCancelAppointment, latestBooking=null }) {
   const t = i18n[language] || i18n.en
   // Referencia al formulario para mantener visible la nueva pantalla tras cada giro.
   const bookingRef = useRef(null)
@@ -131,12 +131,17 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
     return ''
   }
 
-  function navigate(next) {
+  async function navigate(next) {
     if (phase !== 'idle') return
     if (next > step) {
       const message = validateCurrent()
       if (message) { setError(message); return }
-      if(step===2 && next>step && isKnownOccupied()) {setShowBusyModal(true);return}
+      if(step===2 && next>step){
+        if(isKnownOccupied()){setShowBusyModal(true);return}
+        try{
+          if(onCheckSlot && await onCheckSlot(barber,date,time)){setShowBusyModal(true);return}
+        }catch(err){setError(language==='es'?'No se pudo comprobar la disponibilidad. Intenta nuevamente.':'Could not check availability. Please try again.');return}
+      }
     }
     setError('')
     setDirection(next > step ? 'forward' : 'backward')
