@@ -76,6 +76,10 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isOwner() || (isAnonymous() && !exists(/databases/$(database)/documents/appointments/$(slot)));
     }
+    match /bookingLookup/{key}/items/{slot} {
+      allow read: if true;
+      allow create, update, delete: if isOwner();
+    }
     match /appointments/{slot} {
       function ownsBooking() {
         return isAnonymous()
