@@ -199,7 +199,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
     try{
       const result=await onFindAppointments({first:first.trim(),last:last.trim(),phone:formatPhone(phone)})
       setMatches(result)
-      if(!result.length)setError(language==='es'?'No se encontró una cita vinculada a esta sesión. Si reservaste desde otro dispositivo o antes de un cambio de sesión, tu cita puede seguir registrada. Comunícate con la barbería al 570-817-3470 para verificarla.':'No booking is linked to this session. An appointment booked on another device or before a session change may still exist. Call the barbershop at 570-817-3470 to verify it.')
+      if(!result.length)setError(language==='es'?'No se encontró una cita con esos tres datos. Verifica el nombre, apellido y teléfono.':'No booking matched those three fields. Check first name, last name and phone.')
     }catch(err){setError(err.message)}
     finally{setSearchBusy(false)}
   }
@@ -241,7 +241,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
           {matches.map(a=><div className="cb-summary" key={a.id}>
             <p><strong>{a.first} {a.last}</strong> · {barbers.find(b=>b.id===a.barberId)?.name||''}</p>
             <p>{a.date} · {displayTime(a.time)} · {a.service}</p>
-            <button className="cb-next" type="button" onClick={()=>{setSelectedBooking(a);setDate(a.date);setTime(a.time)}}>{language==='es'?'Modificar cita':'Modify booking'}</button>
+            {a.sessionOwned ? <button className="cb-next" type="button" onClick={()=>{setSelectedBooking(a);setDate(a.date);setTime(a.time)}}>{language==='es'?'Modificar cita':'Modify booking'}</button> : <p className="cb-error">{language==='es'?'Esta reserva puede consultarse aquí. Para modificarla o cancelarla desde otro dispositivo, comunícate con la barbería.':'This booking can be viewed here. To change or cancel it from another device, contact the barbershop.'}</p>}
           </div>)}
           {error && <p role="status" className="cb-error">{error}</p>}
           {selectedBooking && <form className="cb-fields" onSubmit={modifyBooking}>
