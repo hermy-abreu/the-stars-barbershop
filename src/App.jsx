@@ -128,6 +128,10 @@ export default function App() {
       service:item.service,walkIn:false,bookingOwnerUid:customerAuth.currentUser.uid,createdAt:serverTimestamp()
     })
     try{await setDoc(doc(customerDb,'occupiedSlots',slot),{occupied:true})}catch(e){console.warn('Availability marker pending:',e.code)}
+    try{
+      const key=await lookupKey(item.first,item.last,item.phone)
+      await setDoc(doc(customerDb,'bookingLookup',key,'items',slot),{barberId:item.barberId,date:item.date,time:item.time,service:item.service})
+    }catch(e){console.warn('Lookup index will be synchronized by owner:',e.code||e.message)}
     const record={...item,id:slot}
     setLatestBooking(record)
     return record
