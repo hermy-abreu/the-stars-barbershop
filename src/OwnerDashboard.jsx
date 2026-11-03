@@ -130,7 +130,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
       <div><p className="owner-eyebrow">THE STARS BARBERSHOP · STAFF</p><h1>{t.title}</h1></div>
       <div className="owner-actions"><button onClick={onExit}>{t.back}</button><button onClick={onLogout}>{t.logout}</button></div>
     </header>
-    <p className="owner-demo print-hide">{t.demo}</p>
+
     <nav className="owner-tabs print-hide" aria-label={language==='es'?'Secciones del propietario':'Owner sections'}>
       <button type="button" className={tab==='agenda'?'active':''} onClick={()=>setTab('agenda')}>{language==='es'?'Agenda y reportes':'Schedule & reports'}</button>
       <button type="button" className={tab==='staff'?'active':''} onClick={()=>setTab('staff')}>{language==='es'?'Administrar barberos':'Manage barbers'}</button>
