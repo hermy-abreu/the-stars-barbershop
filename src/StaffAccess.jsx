@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, getDoc, collection, onSnapshot, getDocs, query, where, deleteDoc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
+import { lookupKey } from './bookingLookup'
 import { initializeApp, deleteApp } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import './BarberDashboard.css'
@@ -40,6 +41,11 @@ export default function StaffAccess({language='es',onExit}) {
         try{
           const marker=doc(db,'occupiedSlots',slot)
           if(!(await getDoc(marker)).exists())await setDoc(marker,{occupied:true})
+          if(a.phone && a.first && a.last){
+            const key=await lookupKey(a.first,a.last,a.phone)
+            const index=doc(db,'bookingLookup',key,'items',slot)
+            if(!(await getDoc(index)).exists())await setDoc(index,{barberId:a.barberId,date:a.date,time:a.time,service:a.service||''})
+          }
         }catch(e){if(!cancelled)setError('No se pudo sincronizar la disponibilidad: '+e.message)}
       }
     })()
