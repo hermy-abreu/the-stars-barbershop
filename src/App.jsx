@@ -139,9 +139,22 @@ export default function App() {
   async function findBookings({first,last,phone}) {
     const key=await lookupKey(first,last,phone)
     const snapshot=await getDocs(collection(customerDb,'bookingLookup',key,'items'))
-    return snapshot.docs.map(entry=>({
-      id:entry.id,...entry.data(),first:first.trim(),last:last.trim(),phone
-    })).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
+    const entries=await Promise.all(snapshot.docs.map(async entry=>{
+      let sessionOwned=false
+      let bookingOwnerUid=''
+      try {
+        await customerAuth.authStateReady()
+        if(customerAuth.currentUser){
+          const current=await getDoc(doc(customerDb,'appointments',entry.id))
+          if(current.exists()&&current.data().bookingOwnerUid===customerAuth.currentUser.uid){
+            sessionOwned=true
+            bookingOwnerUid=current.data().bookingOwnerUid
+          }
+        }
+      }catch{ /* Another session may search, but may not edit a private appointment. */ }
+      return {id:entry.id,...entry.data(),first:first.trim(),last:last.trim(),phone,sessionOwned,bookingOwnerUid}
+    }))
+    return entries.sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
   }
   async function changeBooking(booking,next) {
     if(!validBusinessSlot(next.date,next.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
