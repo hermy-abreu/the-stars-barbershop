@@ -173,6 +173,11 @@ export default function App() {
         throw new Error('Selecciona una fecha u hora diferente.')
       }
     })
+    try {
+      const key=await lookupKey(booking.first,booking.last,booking.phone)
+      await setDoc(doc(customerDb,'bookingLookup',key,'items',newId),{barberId:booking.barberId,date:next.date,time:next.time,service:booking.service})
+      await deleteDoc(doc(customerDb,'bookingLookup',key,'items',oldId))
+    }catch(e){console.warn('Booking lookup update pending:',e.code||e.message)}
     try { await setDoc(doc(customerDb,'occupiedSlots',newId),{occupied:true}) } catch(e) { console.warn('New availability flag pending:',e.code) }
     try { await deleteDoc(doc(customerDb,'occupiedSlots',oldId)) } catch(e) { console.warn('Old availability flag cleanup pending:',e.code) }
   }
@@ -180,6 +185,10 @@ export default function App() {
     await customerAuth.authStateReady()
     if(!customerAuth.currentUser?.isAnonymous||booking.bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('Esta sesión no puede cancelar la reserva.')
     await deleteDoc(doc(customerDb,'appointments',booking.id))
+    try{
+      const key=await lookupKey(booking.first,booking.last,booking.phone)
+      await deleteDoc(doc(customerDb,'bookingLookup',key,'items',booking.id))
+    }catch(e){console.warn('Booking lookup cleanup pending:',e.code||e.message)}
     try { await deleteDoc(doc(customerDb,'occupiedSlots',booking.id)) } catch(e) { console.warn('Availability cleanup pending:',e.code) }
   }
   // El idioma se detecta automáticamente al cargar la PWA.
