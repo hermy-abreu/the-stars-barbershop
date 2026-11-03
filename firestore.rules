@@ -76,18 +76,6 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isOwner() || (isAnonymous() && !exists(/databases/$(database)/documents/appointments/$(slot)));
     }
-    match /bookingLookup/{key}/items/{slot} {
-      allow get, list: if true;
-      allow create: if isOwner() || (isAnonymous()
-        && request.resource.data.keys().hasOnly(['barberId','date','time','service'])
-        && exists(/databases/$(database)/documents/appointments/$(slot))
-        && get(/databases/$(database)/documents/appointments/$(slot)).data.get('bookingOwnerUid','') == request.auth.uid
-        && request.resource.data.barberId == get(/databases/$(database)/documents/appointments/$(slot)).data.barberId
-        && request.resource.data.date == get(/databases/$(database)/documents/appointments/$(slot)).data.date
-        && request.resource.data.time == get(/databases/$(database)/documents/appointments/$(slot)).data.time
-        && request.resource.data.service == get(/databases/$(database)/documents/appointments/$(slot)).data.service);
-      allow update, delete: if isOwner();
-    }
     match /appointments/{slot} {
       function ownsBooking() {
         return isAnonymous()
