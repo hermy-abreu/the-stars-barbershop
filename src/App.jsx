@@ -11,6 +11,7 @@ import StaffAccess from './StaffAccess'
 import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, getDoc, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
 import { db, customerAuth, customerDb } from './firebase'
+import { lookupKey } from './bookingLookup'
 
 // Datos editables: confirmar la dirección con el cliente antes de publicar.
 const SHOP = {
@@ -132,15 +133,11 @@ export default function App() {
     return record
   }
   async function findBookings({first,last,phone}) {
-    await customerAuth.authStateReady()
-    if(!customerAuth.currentUser) await signInAnonymously(customerAuth)
-    if(!customerAuth.currentUser.isAnonymous) throw new Error('Abre esta página en una sesión de cliente.')
-    const results=await getDocs(query(collection(customerDb,'appointments'),where('bookingOwnerUid','==',customerAuth.currentUser.uid)))
-    const normalize=v=>String(v||'').trim().toLocaleLowerCase()
-    const digits=v=>String(v||'').replace(/\D/g,'')
-    return results.docs.map(d=>({id:d.id,...d.data()})).filter(a=>
-      normalize(a.first)===normalize(first)&&normalize(a.last)===normalize(last)&&digits(a.phone)===digits(phone)
-    ).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
+    const key=await lookupKey(first,last,phone)
+    const snapshot=await getDocs(collection(customerDb,'bookingLookup',key,'items'))
+    return snapshot.docs.map(entry=>({
+      id:entry.id,...entry.data(),first:first.trim(),last:last.trim(),phone
+    })).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
   }
   async function changeBooking(booking,next) {
     if(!validBusinessSlot(next.date,next.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
