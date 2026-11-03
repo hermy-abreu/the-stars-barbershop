@@ -86,7 +86,8 @@ service cloud.firestore {
         && request.resource.data.date == get(/databases/$(database)/documents/appointments/$(slot)).data.date
         && request.resource.data.time == get(/databases/$(database)/documents/appointments/$(slot)).data.time
         && request.resource.data.service == get(/databases/$(database)/documents/appointments/$(slot)).data.service);
-      allow update, delete: if isOwner();
+      allow update: if isOwner();
+      allow delete: if isOwner() || (isAnonymous() && !exists(/databases/$(database)/documents/appointments/$(slot)));
     }
     match /appointments/{slot} {
       function ownsBooking() {
