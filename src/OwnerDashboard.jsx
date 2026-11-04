@@ -23,7 +23,7 @@ function isWithinPeriod(value, reference, period) {
   const end=new Date(start.getFullYear(),start.getMonth(),start.getDate()+7)
   return d>=start && d<end
 }
-export default function OwnerDashboard({language='es',onExit,onLogout,appointments=[],barbers=[],onCreateBarber=async()=>{},onUpdateBarber=async()=>{},onDeleteBarber=async()=>{}}) {
+export default function OwnerDashboard({language='es',onExit,onLogout,appointments=[],barbers=[],onCreateBarber=async()=>{},onUpdateBarber=async()=>{},onDeleteBarber=async()=>{},staffError=''}) {
   const t=words[language]||words.en
   const locale=language==='es'?'es-US':'en-US'
   const [tab,setTab]=useState('agenda')
@@ -131,6 +131,7 @@ export default function OwnerDashboard({language='es',onExit,onLogout,appointmen
       <div className="owner-actions"><button onClick={onExit}>{t.back}</button><button onClick={onLogout}>{t.logout}</button></div>
     </header>
 
+    {staffError && <p className="barber-error print-hide" role="alert">{staffError}</p>}
     <nav className="owner-tabs print-hide" aria-label={language==='es'?'Secciones del propietario':'Owner sections'}>
       <button type="button" className={tab==='agenda'?'active':''} onClick={()=>setTab('agenda')}>{language==='es'?'Agenda y reportes':'Schedule & reports'}</button>
       <button type="button" className={tab==='staff'?'active':''} onClick={()=>setTab('staff')}>{language==='es'?'Administrar barberos':'Manage barbers'}</button>
