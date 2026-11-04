@@ -39,7 +39,7 @@ export default function StaffAccess({language='es',onExit}) {
         if(cancelled)break
         if(a.walkIn)continue
         const slot=String(a.id)
-        if(a.phone && a.first && a.last && a.phone.replace(/\\D/g,'').length===10){
+        if(a.phone && a.first && a.last && a.phone.replace(/[^0-9]/g,'').length===10){
           try{
             const key=await lookupKey(a.first,a.last,a.phone)
             const index=doc(db,'bookingLookup',key,'items',slot)
