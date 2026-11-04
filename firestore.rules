@@ -98,7 +98,31 @@ service cloud.firestore {
         || (isBarber() && resource.data.barberId == request.auth.uid)
         || ownsBooking();
       allow create: if validAppointment()
-        && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time
+        && (
+          (request.resource.data.walkIn == false
+            && slot == request.resource.data.barberId + '_' + request.resource.data.date + '_' + request.resource.data.time)
+          || (request.resource.data.walkIn == true
+            && slot.matches('^' + request.resource.data.barberId + '_' + request.resource.data.date + '_walkin_[0-9a-f-]{36}
+        && (
+          isOwner()
+          || (isBarber() && request.resource.data.barberId == request.auth.uid)
+          || (isAnonymous()
+            && request.resource.data.walkIn == false
+            && request.resource.data.get('bookingOwnerUid', '') == request.auth.uid
+            && request.resource.data.phone.size() >= 10
+            && exists(/databases/$(database)/documents/barbers/$(request.resource.data.barberId))
+            && get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.active == true)
+        );
+      allow update: if false;
+      allow delete: if isOwner()
+        || (isBarber() && resource.data.barberId == request.auth.uid)
+        || ownsBooking();
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
+))
+        )
         && (
           isOwner()
           || (isBarber() && request.resource.data.barberId == request.auth.uid)
