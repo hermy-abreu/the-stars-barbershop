@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
+import GoogleReviews from './GoogleReviews'
 import StaffAccess from './StaffAccess'
 import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, getDoc, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously } from 'firebase/auth'
@@ -356,18 +357,10 @@ export default function App() {
           </div>
         </section>
 
-        {/* Reserva de espacio; no se muestran reseñas ficticias. */}
         <section className="section reviews" id="reviews">
           <div className="container">
             <p className="eyebrow">{t.reviewsEyebrow}</p><h2>{t.reviewsTitle}</h2>
-            <div className="review-panel">
-              <span className="review-panel-icon"><Icon name="message" /></span>
-              <div>
-                <strong>{t.reviewFuture}</strong>
-                <p>{t.reviewsText}</p>
-                <small>{t.reviewDetail}</small>
-              </div>
-            </div>
+            <GoogleReviews language={language} mapsUrl={'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(SHOP.name+' '+SHOP.address)}/>
           </div>
         </section>
 
