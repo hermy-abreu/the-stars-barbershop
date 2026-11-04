@@ -158,7 +158,7 @@ export default function StaffAccess({language='es',onExit}) {
       tx.delete(sourceRef)
     })
   }
-  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onDeleteBarber={deleteBarber}/>
+  if(role==='owner' && user && !loading) return <OwnerDashboard language={language} onExit={onExit} onLogout={()=>signOut(auth)} barbers={barbers} appointments={appointments} onCreateBarber={createBarber} onUpdateBarber={updateBarber} onDeleteBarber={deleteBarber} staffError={error}/>
 
   return <section className="barber-area"><div className="barber-login-card">
     <button type="button" className="barber-simple-link" onClick={onExit}>← {es?'Volver a la web':'Back to website'}</button>
