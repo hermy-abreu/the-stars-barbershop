@@ -85,7 +85,7 @@ service cloud.firestore {
         && request.resource.data.barberId == get(/databases/$(database)/documents/appointments/$(slot)).data.barberId
         && request.resource.data.date == get(/databases/$(database)/documents/appointments/$(slot)).data.date
         && request.resource.data.time == get(/databases/$(database)/documents/appointments/$(slot)).data.time
-        && request.resource.data.service == get(/databases/$(database)/documents/appointments/$(slot)).data.service);
+        && request.resource.data['service'] == get(/databases/$(database)/documents/appointments/$(slot)).data['service']);
       allow update: if isOwner();
       allow delete: if isOwner() || (isAnonymous() && !exists(/databases/$(database)/documents/appointments/$(slot)));
     }
