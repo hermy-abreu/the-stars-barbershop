@@ -74,13 +74,34 @@ function todayLocal() {
   return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
 }
 
+/** Convierte usuarios y enlaces sociales en destinos web válidos. */
+function socialHref(network, input) {
+  const raw=String(input||'').trim()
+  if(!raw)return null
+  const domains={instagram:'instagram.com',facebook:'facebook.com',tiktok:'tiktok.com',youtube:'youtube.com'}
+  const domain=domains[network]
+  if(!domain)return null
+  if(/^https?:\/\//i.test(raw)){
+    try {
+      const url=new URL(raw)
+      if(url.protocol!=='https:' && url.protocol!=='http:')return null
+      return url.toString()
+    } catch { return null }
+  }
+  const handle=raw.replace(/^@/,'').replace(/^\/+|\/+$/g,'')
+  if(!handle || /[\s?#]/.test(handle))return null
+  const short=handle.toLowerCase().startsWith(domain+'/')?handle.slice(domain.length+1):handle
+  return 'https://www.'+domain+'/'+(network==='tiktok'?'@'+short.replace(/^@/,''):short)
+}
+
 /** Imagen opcional: si el archivo JPG aún no existe, se muestran iniciales. */
 function BarberCard({ barber, selected, onSelect, onProfile, t }) {
   return (
     <label className={`cb-barber ${selected ? 'selected' : ''}`}>
       <input type="radio" name="bookingBarber" checked={selected} onChange={onSelect} />
       <span className="cb-portrait">
-        <span aria-hidden="true">{barber.name[0]}</span>
+        {barber.photo ? <img className="cb-portrait-photo" src={barber.photo} alt="" onError={event=>{event.currentTarget.style.display='none';event.currentTarget.nextElementSibling.style.display=''}} /> : null}
+        <span aria-hidden="true" style={barber.photo?{display:'none'}:undefined}>{barber.name[0]}</span>
       </span>
       <span className="cb-barber-name">{barber.name}</span>
       <span className="cb-radio-dot" aria-hidden="true" />
@@ -336,7 +357,7 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
           <h3>{profileToView.name}</h3>
           {profileToView.alias && <p>“{profileToView.alias}”</p>}
           {profileToView.phone && <p>☎ <a href={'tel:'+profileToView.phone}>{profileToView.phone}</a></p>}
-          {['instagram','facebook','tiktok','youtube'].filter(k=>profileToView[k]).map(k=><p key={k}><strong>{k[0].toUpperCase()+k.slice(1)}:</strong> {profileToView[k]}</p>)}
+          {['instagram','facebook','tiktok','youtube'].filter(k=>profileToView[k]).map(k=><p key={k}><strong>{k[0].toUpperCase()+k.slice(1)}:</strong> {socialHref(k,profileToView[k]) ? <a href={socialHref(k,profileToView[k])} target="_blank" rel="noopener noreferrer">{profileToView[k]}</a> : profileToView[k]}</p>)}
           <button type="button" className="cb-next" onClick={()=>{setBarber(profileToView.id);setProfileToView(null)}}>{language==='es'?'Elegir este barbero':'Choose this barber'}</button>
         </section></div>}
         {error && <div role="alert" className="cb-error"><p>{error}</p>{error===busyMessage && <p>{chosenBarber?.phone && <span>{language==='es'?'Barbero':'Barber'}: <a href={'tel:'+chosenBarber.phone}>{chosenBarber.phone}</a><br/></span>}{shopPhone && <span>{language==='es'?'Barbería':'Barbershop'}: <a href={'tel:'+shopPhone}>{shopPhone}</a></span>}</p>}</div>}
