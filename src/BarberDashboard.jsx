@@ -195,7 +195,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     if (selectedDay !== shopToday()) { setModalError(t.walkinOnlyToday); setAddingWalkin(false); return }
     // El Walk-in queda asociado al barbero conectado y a la hora REAL de registro.
     setAppointments(current => [...current, {
-      id: Math.max(0, ...current.map(a => a.id)) + 1,
+      id: `${account.id}_${shopToday()}_walkin_${crypto.randomUUID()}`,
       barberId: account.id, first: walkinFirst.trim(), last: walkinLast.trim(), phone: '',
       date: shopToday(), time: new Intl.DateTimeFormat('en-GB', {timeZone: 'America/New_York', hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).format(now),
       service: '', walkIn: true,
