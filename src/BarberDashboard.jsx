@@ -97,16 +97,50 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const currentBarber = barbers.find(b=>b.id===account?.id) || authenticatedBarber
   const [profileDraft,setProfileDraft] = useState(null)
   function openProfile(){setProfileDraft({...currentBarber||{name:account?.name||'',alias:'',phone:''}});setProfileOpen(true)}
-  function uploadProfilePhoto(event){
+  async function uploadProfilePhoto(event){
     const file=event.target.files?.[0]
     if(!file)return
-    if(!file.type.startsWith('image/')||file.size>120000){
-      alert(language==='es'?'La fotografía debe ser JPG, PNG o WebP y pesar menos de 120 KB.':'Photo must be JPG, PNG or WebP under 120 KB.')
+    event.target.value=''
+    if(!file.type.startsWith('image/')){
+      alert(language==='es'?'Selecciona una fotografía válida.':'Select a valid photo.')
       return
     }
-    const reader=new FileReader()
-    reader.onload=()=>setProfileDraft(old=>({...old,photo:String(reader.result||'')}))
-    reader.readAsDataURL(file)
+    // Accept camera originals; resize and compress locally before storing in Firestore.
+    const url=URL.createObjectURL(file)
+    try{
+      const image=new Image()
+      await new Promise((resolve,reject)=>{
+        image.onload=resolve
+        image.onerror=()=>reject(new Error('Formato de imagen no compatible.'))
+        image.src=url
+      })
+      const canvas=document.createElement('canvas')
+      const maxEdge=640
+      const scale=Math.min(1,maxEdge/Math.max(image.naturalWidth,image.naturalHeight))
+      canvas.width=Math.max(1,Math.round(image.naturalWidth*scale))
+      canvas.height=Math.max(1,Math.round(image.naturalHeight*scale))
+      const context=canvas.getContext('2d')
+      if(!context)throw new Error('No se pudo procesar la imagen.')
+      context.fillStyle='#ffffff'
+      context.fillRect(0,0,canvas.width,canvas.height)
+      context.drawImage(image,0,0,canvas.width,canvas.height)
+      let blob
+      for(const quality of [0.82,0.7,0.55,0.4]){
+        blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality))
+        if(!blob)throw new Error('No se pudo convertir la fotografía.')
+        if(blob.size<=180000)break
+      }
+      if(blob.size>180000)throw new Error('La imagen no pudo comprimirse suficientemente. Prueba otra foto.')
+      const data=await new Promise((resolve,reject)=>{
+        const reader=new FileReader()
+        reader.onload=()=>resolve(String(reader.result||''))
+        reader.onerror=()=>reject(new Error('No se pudo leer la imagen.'))
+        reader.readAsDataURL(blob)
+      })
+      setProfileDraft(old=>old?{...old,photo:data}:old)
+    }catch(error){
+      alert((language==='es'?'No se pudo preparar la foto: ':'Could not prepare photo: ')+error.message)
+    }finally{URL.revokeObjectURL(url)}
   }
   function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,...profileDraft,phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
 
@@ -234,7 +268,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
         <p>{language==='es'?'El nombre y apellido los administra el propietario. Todos los demás datos son opcionales y visibles al público.':'Name is managed by the owner. Other fields are optional and public.'}</p>
         <form onSubmit={saveProfile} className="profile-fields">
           <label>{language==='es'?'Nombre y apellido':'Full name'}<input value={currentBarber?.name||''} disabled /></label>
-          <label>{language==='es'?'Fotografía':'Photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadProfilePhoto}/></label>
+          <label>{language==='es'?'Fotografía (ajuste automático)':'Photo (automatic optimization)'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadProfilePhoto}/></label>
           {profileDraft.photo && <img className="profile-photo-preview" alt="Vista previa" src={profileDraft.photo} />}
           {profileDraft.photo && <button type="button" onClick={()=>setProfileDraft(old=>({...old,photo:''}))}>{language==='es'?'Quitar fotografía':'Remove photo'}</button>}
           <label>{language==='es'?'Alias profesional':'Professional nickname'}<input maxLength={60} value={profileDraft.alias||''} onChange={e=>setProfileDraft(old=>({...old,alias:e.target.value}))}/></label>
