@@ -94,7 +94,7 @@ export default function StaffAccess({language='es',onExit}) {
       for(const [id,a] of current){
         const before=previous.get(id)
         if(!before){
-          const slot=user.uid+'_'+a.date+'_'+a.time
+          const slot=a.walkIn ? String(id) : user.uid+'_'+a.date+'_'+a.time
           await setDoc(doc(db,'appointments',slot),{barberId:user.uid,first:a.first,last:a.last,phone:a.phone||'',date:a.date,time:a.time,service:a.service||'',walkIn:!!a.walkIn,createdAt:serverTimestamp()})
         } else if(before.date!==a.date||before.time!==a.time){
           throw Error('El cambio de fecha y hora requiere habilitar las reglas de modificación.')
