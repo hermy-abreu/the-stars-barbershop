@@ -148,6 +148,15 @@ html { scroll-padding-top: 115px; }
 .review-panel p { margin: 8px 0 6px; color: var(--muted); line-height: 1.55; }
 .review-panel small { color: #737c89; line-height: 1.55; }
 
+.review-panel { flex-direction: column; align-items: stretch; max-width: 850px; gap: 16px; }
+.review-panel .gold-button { align-self: flex-start; }
+.google-review-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:12px; margin:16px 0; }
+.google-review-entry { border:1px solid #e9e0d1; background:#fffdf9; border-radius:12px; padding:15px; overflow-wrap:anywhere; }
+.google-review-entry strong { font-size:15px; }
+.google-review-entry span { display:block; color:#ba8429; margin-top:5px; letter-spacing:1px; }
+.google-review-entry p { font-size:14px; }
+
+
 @media (max-width: 1050px) {
   html { scroll-padding-top: 156px; }
   .section, .hero { scroll-margin-top: 156px; }
