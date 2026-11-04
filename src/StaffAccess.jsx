@@ -29,25 +29,35 @@ export default function StaffAccess({language='es',onExit}) {
     const stopBookings=onSnapshot(source,snap=>setAppointments(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>setError(err.message))
     return ()=>{stopBarbers();stopBookings()}
   },[role,user])
-  // Owner reconciles privacy-safe occupied-slot markers for previously stored appointments.
+  // Backfill older appointments independently of availability markers.
   useEffect(()=>{
     if(role!=='owner'||!appointments.length)return
     let cancelled=false
     ;(async()=>{
+      const failures=[]
       for(const a of appointments){
         if(cancelled)break
-        if(a.walkIn || !/^[0-9]{2}:(00|30)$/.test(a.time||''))continue
+        if(a.walkIn)continue
         const slot=String(a.id)
-        try{
-          const marker=doc(db,'occupiedSlots',slot)
-          if(!(await getDoc(marker)).exists())await setDoc(marker,{occupied:true})
-          if(a.phone && a.first && a.last){
+        if(a.phone && a.first && a.last && a.phone.replace(/\\D/g,'').length===10){
+          try{
             const key=await lookupKey(a.first,a.last,a.phone)
             const index=doc(db,'bookingLookup',key,'items',slot)
-            if(!(await getDoc(index)).exists())await setDoc(index,{barberId:a.barberId,date:a.date,time:a.time,service:a.service||''})
-          }
-        }catch(e){if(!cancelled)setError('No se pudo sincronizar la disponibilidad: '+e.message)}
+            const metadata={barberId:a.barberId,date:a.date,time:a.time,service:a.service||''}
+            const existing=await getDoc(index)
+            if(!existing.exists())await setDoc(index,metadata)
+            else if(['barberId','date','time','service'].some(field=>existing.data()[field]!==metadata[field]))
+              await updateDoc(index,metadata)
+          }catch(e){failures.push('Índice '+slot+': '+(e.code||e.message))}
+        }
+        if(/^[0-9]{2}:(00|30)$/.test(a.time||'')){
+          try{
+            const marker=doc(db,'occupiedSlots',slot)
+            if(!(await getDoc(marker)).exists())await setDoc(marker,{occupied:true})
+          }catch(e){failures.push('Horario '+slot+': '+(e.code||e.message))}
+        }
       }
+      if(!cancelled && failures.length)setError('Sincronización incompleta: '+failures.join('; '))
     })()
     return ()=>{cancelled=true}
   },[role,appointments])
