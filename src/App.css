@@ -148,6 +148,15 @@ html { scroll-padding-top: 115px; }
 .review-panel p { margin: 8px 0 6px; color: var(--muted); line-height: 1.55; }
 .review-panel small { color: #737c89; line-height: 1.55; }
 
+.review-panel { flex-direction: column; align-items: stretch; max-width: 850px; gap: 16px; }
+.review-panel .gold-button { align-self: flex-start; }
+.google-review-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:12px; margin:16px 0; }
+.google-review-entry { border:1px solid #e9e0d1; background:#fffdf9; border-radius:12px; padding:15px; overflow-wrap:anywhere; }
+.google-review-entry strong { font-size:15px; }
+.google-review-entry span { display:block; color:#ba8429; margin-top:5px; letter-spacing:1px; }
+.google-review-entry p { font-size:14px; }
+
+
 @media (max-width: 1050px) {
   html { scroll-padding-top: 156px; }
   .section, .hero { scroll-margin-top: 156px; }
@@ -273,3 +282,27 @@ html { scroll-padding-top: 115px; }
 html { scroll-padding-top:86px; }
 #booking { scroll-margin-top:86px; }
 @media (max-width:640px) {html { scroll-padding-top:72px; } #booking { scroll-margin-top:72px; }}
+
+/* Optional native PWA installation entry point. */
+.install-invite { max-width:720px; margin:32px auto 16px; padding:25px 18px; text-align:center; border:1px solid #c7a45a; border-radius:14px; background:#111a29; color:#f7f4eb; }
+.install-invite h2 { font-size:18px; margin:0 0 9px; color:#e1b95a; }
+.install-invite p { margin:0 0 16px; line-height:1.45; }
+.install-invite button { border:0; cursor:pointer; border-radius:9px; background:#d5a841; color:#161a21; font-weight:700; padding:12px 30px; min-height:44px; }
+.install-invite .install-instructions { margin-top:17px; padding:14px; border-radius:9px; background:#273247; }
+.install-invite .install-instructions button { background:transparent; border:1px solid #e1b95a; color:#fff; }
+@media(max-width:720px){.install-invite{margin:20px 12px;}}
+
+
+/* Auto-rotating Google review slider; no fictitious review content. */
+.google-review-content { width:100%; min-width:0; }
+.google-review-slideshow { border-radius:14px; background:#fffdf9; border:1px solid #e9e0d1; padding:clamp(18px,3vw,30px); margin:16px 0; text-align:center; }
+.google-review-slide { min-height:170px; display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center; animation:google-review-appear 450ms ease-out; overflow-wrap:anywhere; }
+.google-review-slide .google-review-stars { color:#ba8429; font-size:25px; letter-spacing:2px; }
+.google-review-slide blockquote { font-size:clamp(16px,2vw,20px); font-style:italic; line-height:1.6; margin:4px 0; max-width:640px; }
+.google-review-slide strong { font-size:16px; }
+.google-review-controls { display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; padding-top:18px; }
+.google-review-controls button { cursor:pointer; border:1px solid #e2d1b2; border-radius:8px; background:white; color:#17243b; padding:8px 15px; font-size:17px; font-weight:700; }
+.google-review-controls button:hover,.google-review-controls button:focus-visible { background:#fff2d2; }
+.google-review-controls .google-review-pause { font-size:13px; }
+@keyframes google-review-appear { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@media(prefers-reduced-motion:reduce){.google-review-slide{animation:none;}}

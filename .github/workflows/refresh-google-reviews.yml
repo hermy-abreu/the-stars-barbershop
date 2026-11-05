@@ -1,0 +1,55 @@
+name: Refresh verified Google reviews
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    if: ${{ vars.GBP_REVIEWS_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integracion-final-pwa
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Sync reviews from Google Business Profile
+        run: node scripts/sync-google-reviews.mjs
+        env:
+          GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+          GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+          GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
+          GBP_ACCOUNT_ID: ${{ vars.GBP_ACCOUNT_ID }}
+          GBP_LOCATION_ID: ${{ vars.GBP_LOCATION_ID }}
+      - name: Keep review cache in branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/google-reviews.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Refresh verified Google Business Profile reviews"
+            git push
+          fi
+      - name: Install web dependencies
+        run: npm install --no-audit
+      - name: Build the site
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: the-stars-barbershop.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: the-stars-barbershop
+          VITE_FIREBASE_STORAGE_BUCKET: the-stars-barbershop.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '408401127903'
+          VITE_FIREBASE_APP_ID: '1:408401127903:web:c8efe58656af245d67bc6a'
+      - name: Deploy refreshed reviews to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_THE_STARS_BARBERSHOP }}
+          channelId: live
+          projectId: the-stars-barbershop

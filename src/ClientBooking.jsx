@@ -13,17 +13,20 @@ const GROUPS = [
   { id: 'kids', ids: ['kidscut', 'kidsfade', 'kidslineup'] },
   { id: 'other', ids: ['other'] },
 ]
-const DEMO_TIMES = Array.from({length: 33}, (_, i) => { const minutes=6*60+i*30; return `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}` })
+const to24=(hour,minutes,period)=>`${String((Number(hour)%12)+(period==='PM'?12:0)).padStart(2,'0')}:${minutes}`
+const from24=value=>{const hour=Number((value||'10:00').split(':')[0]);return {hour:String(hour%12||12),minutes:(value||'10:00').split(':')[1]||'00',period:hour>=12?'PM':'AM'}}
+const displayTime=value=>{if(!/^\d{2}:\d{2}$/.test(value||''))return value||'';const {hour,minutes,period}=from24(value);return `${hour}:${minutes} ${period}`}
+const isOpenSlot=(day,value)=>{if(!day||!value)return false;const date=new Date(day+'T12:00:00');const weekday=date.getDay();return weekday!==0 && value>='10:00'&&value<='18:30'&&['00','30'].includes(value.slice(3))}
 
 const i18n = {
   es: {
-    title: 'Reserva tu próxima cita', demo: 'DEMOSTRACIÓN LOCAL: SIN RESERVAS REALES NI SERVIDOR',
+    title: 'Reserva tu próxima cita', demo: 'RESERVAS CONECTADAS A FIRESTORE',
     steps: ['Tus datos', 'Barbero', 'Fecha y hora', 'Servicio', 'Resumen'],
     next: 'Siguiente', back: 'Anterior', restart: 'Comenzar de nuevo',
-    first: 'Nombre', last: 'Apellido', phone: 'Número de celular',
-    help: 'Estos datos se usarán para identificar tu reserva cuando el sistema esté activo.',
-    barberHelp: 'Selecciona uno de los perfiles activos de demostración.',
-    date: 'Fecha', time: 'Horario de ejemplo', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
+    first: 'Nombre', last: 'Apellido', phone: 'Número de teléfono',
+    help: 'Introduce los datos de la persona que recibirá el servicio.',
+    barberHelp: 'Selecciona tu barbero.',
+    date: 'Fecha', time: 'Hora', timeHelp: 'Horario de referencia: 6:00 a. m. a 10:00 p. m. Los horarios disponibles se confirmarán con el propietario.',
     groups: { adults: 'Cortes y arreglos', kids: 'Servicios para niños', other: 'Otras opciones' },
     names: {
       classic: 'Corte clásico', fade: 'Degradado / Skin Fade', haircutBeard: 'Corte y barba',
@@ -35,20 +38,20 @@ const i18n = {
     required: 'Completa los campos obligatorios para continuar.',
     phoneError: 'Introduce un celular válido de 10 dígitos.',
     dateError: 'Selecciona una fecha de hoy en adelante.',
-    barberError: 'Selecciona un barbero.', timeError: 'Selecciona un horario de ejemplo.',
+    barberError: 'Selecciona un barbero.', timeError: 'Selecciona una hora.',
     serviceError: 'Selecciona un servicio.',
     client: 'Cliente', barber: 'Barbero', service: 'Servicio',
-    confirm: 'Confirmar cita', confirmed: '¡Tu cita ha sido confirmada!', warning: 'Esta es una demostración local, no una reserva real.',
+    confirm: 'Confirmar cita', confirmed: '¡Tu cita ha sido confirmada!', warning: 'Tu cita se guardará en Firestore al confirmar.',
     imageAlt: 'Fotografía de ejemplo de', imageFallback: 'Imagen de ejemplo no disponible',
   },
   en: {
-    title: 'Book your next appointment', demo: 'LOCAL DEMO: NO REAL BOOKINGS OR SERVER',
+    title: 'Book your next appointment', demo: 'BOOKINGS SAVED TO FIRESTORE',
     steps: ['Your details', 'Barber', 'Date & time', 'Service', 'Summary'],
     next: 'Next', back: 'Back', restart: 'Start again',
-    first: 'First name', last: 'Last name', phone: 'Mobile number',
-    help: 'These details will identify your booking when the system goes live.',
-    barberHelp: 'Choose an active demo barber profile.',
-    date: 'Date', time: 'Sample time', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
+    first: 'First name', last: 'Last name', phone: 'Phone number',
+    help: 'Enter the details of the person receiving the service.',
+    barberHelp: 'Choose your barber.',
+    date: 'Date', time: 'Hour', timeHelp: 'Reference hours: 6:00 AM–10:00 PM. Actual availability will be confirmed with the owner.',
     groups: { adults: 'Haircuts & grooming', kids: "Kids' services", other: 'Other' },
     names: {
       classic: 'Classic Haircut', fade: 'Skin Fade / Bald Fade', haircutBeard: 'Haircut & Beard',
@@ -57,31 +60,48 @@ const i18n = {
       kidslineup: 'Kids Line Up', other: 'Other / Not sure',
     },
     required: 'Complete all required fields to continue.',
-    phoneError: 'Enter a valid 10 to 15 digit mobile number.',
+    phoneError: 'Enter a valid 10-digit phone number.',
     dateError: 'Choose today or a future date.',
-    barberError: 'Choose a barber.', timeError: 'Choose a sample time.',
+    barberError: 'Choose a barber.', timeError: 'Choose a time.',
     serviceError: 'Choose a service.',
     client: 'Customer', barber: 'Barber', service: 'Service',
-    confirm: 'Confirm appointment', confirmed: 'Your appointment has been confirmed!', warning: 'This is a local demo, not a real booking.',
+    confirm: 'Confirm appointment', confirmed: 'Your appointment has been confirmed!', warning: 'Your booking is saved in Firestore after confirmation.',
     imageAlt: 'Sample photograph of', imageFallback: 'Sample image unavailable',
   },
 }
 
 function todayLocal() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+}
+
+/** Convierte usuarios y enlaces sociales en destinos web válidos. */
+function socialHref(network, input) {
+  const raw=String(input||'').trim()
+  if(!raw)return null
+  const domains={instagram:'instagram.com',facebook:'facebook.com',tiktok:'tiktok.com',youtube:'youtube.com'}
+  const domain=domains[network]
+  if(!domain)return null
+  if(/^https?:\/\//i.test(raw)){
+    try {
+      const url=new URL(raw)
+      if(url.protocol!=='https:' && url.protocol!=='http:')return null
+      return url.toString()
+    } catch { return null }
+  }
+  const handle=raw.replace(/^@/,'').replace(/^\/+|\/+$/g,'')
+  if(!handle || /[\s?#]/.test(handle))return null
+  const short=handle.toLowerCase().startsWith(domain+'/')?handle.slice(domain.length+1):handle
+  return 'https://www.'+domain+'/'+(network==='tiktok'?'@'+short.replace(/^@/,''):short)
 }
 
 /** Imagen opcional: si el archivo JPG aún no existe, se muestran iniciales. */
 function BarberCard({ barber, selected, onSelect, onProfile, t }) {
-  const [failed, setFailed] = useState(!barber.photo)
   return (
     <label className={`cb-barber ${selected ? 'selected' : ''}`}>
       <input type="radio" name="bookingBarber" checked={selected} onChange={onSelect} />
       <span className="cb-portrait">
-        {failed ? <span aria-label={t.imageFallback}>{barber.name[0]}</span> : (
-          <img src={barber.photo} alt={`${t.imageAlt} ${barber.name}`} onError={() => setFailed(true)} />
-        )}
+        {barber.photo ? <img className="cb-portrait-photo" src={barber.photo} alt="" onError={event=>{event.currentTarget.style.display='none';event.currentTarget.nextElementSibling.style.display=''}} /> : null}
+        <span aria-hidden="true" style={barber.photo?{display:'none'}:undefined}>{barber.name[0]}</span>
       </span>
       <span className="cb-barber-name">{barber.name}</span>
       <span className="cb-radio-dot" aria-hidden="true" />
@@ -89,10 +109,14 @@ function BarberCard({ barber, selected, onSelect, onProfile, t }) {
   )
 }
 
-export default function ClientBooking({ language = 'en', barbers=[], appointments=[], onCreateAppointment, latestBooking=null }) {
+export default function ClientBooking({ language = 'en', barbers=[], appointments=[], onCreateAppointment, onCheckSlot, onFindAppointments, onChangeAppointment, onCancelAppointment, latestBooking=null }) {
   const t = i18n[language] || i18n.en
   // Referencia al formulario para mantener visible la nueva pantalla tras cada giro.
   const bookingRef = useRef(null)
+  const [mode,setMode] = useState('add')
+  const [matches,setMatches] = useState([])
+  const [selectedBooking,setSelectedBooking] = useState(null)
+  const [searchBusy,setSearchBusy] = useState(false)
   const [step, setStep] = useState(0)
   const [phase, setPhase] = useState('idle')
   const [direction, setDirection] = useState('forward')
@@ -102,9 +126,10 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   const [phone, setPhone] = useState('')
   const [barber, setBarber] = useState('')
   const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
+  const [time, setTime] = useState('10:00')
   const [service, setService] = useState('')
   const [error, setError] = useState('')
+  const [showBusyModal,setShowBusyModal]=useState(false)
   const [profileToView,setProfileToView] = useState(null)
   const saveLock = useRef(false)
   const [saved,setSaved] = useState(false)
@@ -114,24 +139,30 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   // Se valida solo la pantalla actual; nunca se envía información a un servidor.
   function validateCurrent() {
     if (step === 0) {
-      if (!first.trim() || !last.trim() || !phone.trim()) return t.required
+      if (!first.trim() || !last.trim()) return t.required
       const digits = phone.replace(/\D/g, '')
       if (digits.length !== 10) return t.phoneError
     }
     if (step === 1 && !barber) return t.barberError
     if (step === 2) {
       if (!date || date < todayLocal()) return t.dateError
-      if (!time) return t.timeError
+      if (!time || !isOpenSlot(date,time)) return language==='es'?'Negocio cerrado. Atendemos de lunes a sábado, de 10:00 AM a 7:00 PM. Última cita: 6:30 PM.':'Business closed. Open Monday–Saturday, 10:00 AM–7:00 PM. Last booking: 6:30 PM.'
     }
     if (step === 3 && !service) return t.serviceError
     return ''
   }
 
-  function navigate(next) {
+  async function navigate(next) {
     if (phase !== 'idle') return
     if (next > step) {
       const message = validateCurrent()
       if (message) { setError(message); return }
+      if(step===2 && next>step){
+        if(isKnownOccupied()){setShowBusyModal(true);return}
+        try{
+          if(onCheckSlot && await onCheckSlot(barber,date,time)){setShowBusyModal(true);return}
+        }catch(err){setError(language==='es'?'No se pudo comprobar la disponibilidad. Intenta nuevamente.':'Could not check availability. Please try again.');return}
+      }
     }
     setError('')
     setDirection(next > step ? 'forward' : 'backward')
@@ -157,33 +188,92 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
   }
 
   function reset() {
+    setShowBusyModal(false)
     saveLock.current=false; setSaved(false); setSavedRecord(null); setStep(0); setPhase('idle'); setError('')
     setFirst(''); setLast(''); setPhone(''); setBarber('')
-    setDate(''); setTime(''); setService('')
+    setDate(''); setTime('10:00'); setService('')
   }
 
   const chosenBarber = visibleBarbers.find((person) => person.id === barber)
+  const shopPhone = '570-817-3470'
+  function isKnownOccupied(){return [...appointments,latestBooking].filter(Boolean).some(a=>a.barberId===barber&&a.date===date&&a.time===time)}
+  const busyMessage = language==='es' ? `El barbero ${chosenBarber?.name||'seleccionado'} ya tiene una cita agendada para las ${displayTime(time)} del ${date}. Selecciona otro horario. Si tienes alguna inquietud, comunícate con el barbero o con la barbería.` : `${chosenBarber?.name||'The selected barber'} already has an appointment at ${displayTime(time)} on ${date}. Choose a different time. If you have questions, contact the barber or the barbershop.`
   const animationClass = phase === 'idle' ? '' : `cb-${phase}-${direction}`
 
-  function saveDemoAppointment(){
-    if(saved || saveLock.current || !chosenBarber || !date || !time || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
-    if(appointments.some(a=>a.barberId===barber && a.date===date && a.time===time && !a.walkIn)) {setError(language==='es'?'Horario ya ocupado para este barbero.':'Time already reserved for this barber.');return}
+  async function saveDemoAppointment(){
+    if(saved || saveLock.current || !chosenBarber || !date || !isOpenSlot(date,time) || !service || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10) return
+    if(isKnownOccupied()) {setShowBusyModal(true);return}
     saveLock.current=true
     try {
       if(typeof onCreateAppointment!=='function') throw new Error('El guardado no está conectado al módulo principal.')
-      const record=onCreateAppointment({barberId:barber,first:first.trim(),last:last.trim(),phone:formatPhone(phone),date,time,service:i18n.en.names[service],walkIn:false})
+      const record=await onCreateAppointment({barberId:barber,first:first.trim(),last:last.trim(),phone:formatPhone(phone),date,time,service:i18n.en.names[service],walkIn:false})
       if(!record?.id) throw new Error('No se confirmó el almacenamiento de la cita.')
       setSavedRecord(record)
       setSaved(true)
       setError('')
-    } catch (failure) {saveLock.current=false;setError(language==='es'?'No pudimos guardar esta cita de prueba. Vuelve a intentarlo.':'Could not save this demo booking. Please try again.');console.error(failure)}
+    } catch (failure) {saveLock.current=false;const code=failure?.code||'';if(code==='already-exists'){setStep(2);setShowBusyModal(true)}else{setError(language==='es'?'No se pudo confirmar la cita. El horario puede estar ocupado o Firebase puede haber rechazado la operación. Selecciona otro horario o comunícate con la barbería al 570-817-3470.':'Booking could not be confirmed. The slot may be occupied or Firebase may have rejected the request. Choose another time or call 570-817-3470.')}console.error(failure)}
+  }
+  async function searchBooking(event){
+    event.preventDefault()
+    if(!first.trim()||!last.trim()||phone.replace(/\D/g,'').length!==10){setError(language==='es'?'Completa nombre, apellido y teléfono.':'Enter first name, last name and phone.');return}
+    setSearchBusy(true);setError('');setMatches([]);setSelectedBooking(null)
+    try{
+      const result=await onFindAppointments({first:first.trim(),last:last.trim(),phone:formatPhone(phone)})
+      setMatches(result)
+      if(!result.length)setError(language==='es'?'No se encontró una cita con esos tres datos. Verifica el nombre, apellido y teléfono.':'No booking matched those three fields. Check first name, last name and phone.')
+    }catch(err){setError(err.message)}
+    finally{setSearchBusy(false)}
+  }
+  async function modifyBooking(event){
+    event.preventDefault()
+    if(!selectedBooking||!date||!time||date<todayLocal())return
+    setSearchBusy(true);setError('')
+    try {
+      await onChangeAppointment(selectedBooking,{date,time})
+      setSelectedBooking(null);setMatches([])
+      setError(language==='es'?'Cita modificada correctamente.':'Booking updated successfully.')
+    }catch(err){setError(err.message)}
+    finally{setSearchBusy(false)}
+  }
+  async function cancelFoundBooking(){
+    if(!selectedBooking||!window.confirm(language==='es'?'¿Cancelar esta cita?':'Cancel this booking?'))return
+    setSearchBusy(true);setError('')
+    try{
+      await onCancelAppointment(selectedBooking)
+      setSelectedBooking(null);setMatches(matches.filter(x=>x.id!==selectedBooking.id))
+      setError(language==='es'?'Cita cancelada correctamente.':'Booking cancelled successfully.')
+    }catch(err){setError(err.message)}
+    finally{setSearchBusy(false)}
   }
   return (
     <section id="booking" ref={bookingRef} className="client-booking section">
       <div className="container cb-container">
+        {showBusyModal && <div className="cb-alert-overlay" role="presentation"><section role="alertdialog" aria-modal="true" aria-labelledby="cb-busy-title" className="cb-alert-dialog"><h3 id="cb-busy-title">{language==='es'?'Horario no disponible':'Time unavailable'}</h3><p>{busyMessage}</p><p>{chosenBarber?.phone && <span>{language==='es'?'Barbero':'Barber'}: <a href={'tel:'+chosenBarber.phone}>{chosenBarber.phone}</a></span>}</p><p>{language==='es'?'Barbería':'Barbershop'}: <a href="tel:5708173470">{shopPhone}</a></p><button type="button" className="cb-next" autoFocus onClick={()=>setShowBusyModal(false)}>{language==='es'?'Elegir otra hora':'Choose another time'}</button></section></div>}
         <p className="cb-eyebrow">THE STARS BARBERSHOP</p>
         <h2>{t.title}</h2>
-        <p className="cb-demo" role="note">{t.demo}</p>
+        {mode==='find' && <div className="cb-search-panel">
+          <button type="button" className="cb-back cb-search-back" onClick={()=>{setMode('add');setError('');setSelectedBooking(null)}}>← {language==='es'?'Agregar':'Add'}</button>
+          <form className="cb-fields" onSubmit={searchBooking}>
+            <label>{t.first} *<input value={first} autoComplete="given-name" onChange={e=>setFirst(e.target.value)}/></label>
+            <label>{t.last} *<input value={last} autoComplete="family-name" onChange={e=>setLast(e.target.value)}/></label>
+            <label>{t.phone} *<input type="tel" inputMode="tel" value={phone} placeholder="Ej. (570) 555-0100" onChange={e=>setPhone(formatPhone(e.target.value))}/></label>
+            <button type="submit" className="cb-next cb-search-submit" disabled={searchBusy}>{language==='es'?'Buscar cita':'Find booking'}</button>
+          </form>
+          {matches.map(a=><div className="cb-summary" key={a.id}>
+            <p><strong>{a.first} {a.last}</strong> · {barbers.find(b=>b.id===a.barberId)?.name||''}</p>
+            <p>{a.date} · {displayTime(a.time)} · {a.service}</p>
+            {a.sessionOwned ? <button className="cb-next" type="button" onClick={()=>{setSelectedBooking(a);setDate(a.date);setTime(a.time)}}>{language==='es'?'Modificar cita':'Modify booking'}</button> : <p className="cb-error">{language==='es'?'Esta reserva puede consultarse aquí. Para modificarla o cancelarla desde otro dispositivo, comunícate con la barbería.':'This booking can be viewed here. To change or cancel it from another device, contact the barbershop.'}</p>}
+          </div>)}
+          {error && <p role="status" className="cb-error">{error}</p>}
+          {selectedBooking && <form className="cb-fields" onSubmit={modifyBooking}>
+            <h3>{language==='es'?'Modificar cita':'Modify booking'}</h3>
+            <label>{t.date}<input type="date" required min={todayLocal()} value={date} onChange={e=>setDate(e.target.value)}/></label>
+            <label>{t.time}<input type="time" required value={time} onChange={e=>setTime(e.target.value)}/></label>
+            <div className="cb-actions"><button className="cb-next" disabled={searchBusy}>{language==='es'?'Guardar cambios':'Save changes'}</button><button className="cb-back" type="button" disabled={searchBusy} onClick={cancelFoundBooking}>{language==='es'?'Cancelar cita':'Cancel booking'}</button></div>
+          </form>}
+        </div>}
+        {mode==='add' && <>
+
 
         <nav className="cb-progress" aria-label={t.title}>
           {t.steps.map((label, index) => (
@@ -219,10 +309,12 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
 
             {step === 2 && (
               <div className="cb-fields">
-                <label>{t.date}<input type="date" min={todayLocal()} value={date} onChange={(e) => { setDate(e.target.value); setTime(''); setError('') }} /></label>
-                <p className="cb-help">{t.timeHelp}</p>
-                <div className="cb-time-grid" aria-label={t.time}>
-                  {DEMO_TIMES.map((slot) => <button key={slot} type="button" aria-pressed={time === slot} className={time === slot ? 'selected' : ''} onClick={() => { setTime(slot); setError('') }}>{slot}</button>)}
+                <label>{t.date}<input type="date" min={todayLocal()} value={date} onChange={(e) => { setDate(e.target.value); setTime('10:00'); setError('') }} /></label>
+                <p className="cb-help">{language==='es'?'Lunes a sábado, 10:00 AM–7:00 PM. Última reserva a las 6:30 PM. Domingo cerrado.':'Monday–Saturday, 10:00 AM–7:00 PM. Last booking at 6:30 PM. Closed Sunday.'}</p>
+                <div className="cb-time-selectors">
+                  <label>{language==='es'?'Hora':'Hour'}<select value={from24(time).hour} onChange={e=>{setTime(to24(e.target.value,from24(time).minutes,from24(time).period));setError('')}}>{Array.from({length:12},(_,i)=><option value={String(i+1)} key={i}>{i+1}</option>)}</select></label>
+                  <label>{language==='es'?'Minutos':'Minutes'}<select value={from24(time).minutes} onChange={e=>{setTime(to24(from24(time).hour,e.target.value,from24(time).period));setError('')}}><option value="00">00</option><option value="30">30</option></select></label>
+                  <label>AM / PM<select value={from24(time).period} onChange={e=>{setTime(to24(from24(time).hour,from24(time).minutes,e.target.value));setError('')}}><option value="AM">AM</option><option value="PM">PM</option></select></label>
                 </div>
               </div>
             )}
@@ -248,11 +340,11 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
                   <div><dt>{t.phone}</dt><dd>{phone}</dd></div>
                   <div><dt>{t.barber}</dt><dd>{chosenBarber?.name}</dd></div>
                   <div><dt>{t.date}</dt><dd>{date}</dd></div>
-                  <div><dt>{t.time}</dt><dd>{time}</dd></div>
+                  <div><dt>{t.time}</dt><dd>{displayTime(time)}</dd></div>
                   <div><dt>{t.service}</dt><dd>{t.names[service]}</dd></div>
                 </dl>
-                <p className="cb-warning">{saved ? t.confirmed + ' ' + (language==='es'?'(Demostración local, no es una reserva real).':'(Local demo, not a real booking).') : t.warning}</p>
-                {saved && savedRecord && <p role="status" className="cb-warning"><strong>{language==='es'?'Reserva de prueba registrada':'Demo booking registered'} · #{savedRecord.id}</strong><br/>{chosenBarber?.name} · {savedRecord.date} · {savedRecord.time}<br/>{language==='es'?'Consulta esa misma fecha en Staff y en el panel del propietario.':'Check this date in Staff and the owner dashboard.'}</p>}
+                <p className="cb-warning">{saved ? t.confirmed : (language==='es'?'Verifica los datos antes de confirmar.':'Review the details before confirming.')}</p>
+
 
               </div>
             )}
@@ -265,17 +357,21 @@ export default function ClientBooking({ language = 'en', barbers=[], appointment
           <h3>{profileToView.name}</h3>
           {profileToView.alias && <p>“{profileToView.alias}”</p>}
           {profileToView.phone && <p>☎ <a href={'tel:'+profileToView.phone}>{profileToView.phone}</a></p>}
-          {['instagram','facebook','tiktok','youtube'].filter(k=>profileToView[k]).map(k=><p key={k}><strong>{k[0].toUpperCase()+k.slice(1)}:</strong> {profileToView[k]}</p>)}
+          {['instagram','facebook','tiktok','youtube'].filter(k=>profileToView[k]).map(k=><p key={k}><strong>{k[0].toUpperCase()+k.slice(1)}:</strong> {socialHref(k,profileToView[k]) ? <a href={socialHref(k,profileToView[k])} target="_blank" rel="noopener noreferrer">{profileToView[k]}</a> : profileToView[k]}</p>)}
           <button type="button" className="cb-next" onClick={()=>{setBarber(profileToView.id);setProfileToView(null)}}>{language==='es'?'Elegir este barbero':'Choose this barber'}</button>
         </section></div>}
-        {error && <p role="alert" className="cb-error">{error}</p>}
+        {error && <div role="alert" className="cb-error"><p>{error}</p>{error===busyMessage && <p>{chosenBarber?.phone && <span>{language==='es'?'Barbero':'Barber'}: <a href={'tel:'+chosenBarber.phone}>{chosenBarber.phone}</a><br/></span>}{shopPhone && <span>{language==='es'?'Barbería':'Barbershop'}: <a href={'tel:'+shopPhone}>{shopPhone}</a></span>}</p>}</div>}
         <div className={`cb-actions ${step === 4 ? 'cb-actions-summary' : ''}`}>
           {step > 0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={() => navigate(step - 1)}>← {t.back}</button>}
-          {step < 4 ? <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{t.next} →</button> : <>
-            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !time || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
+          {step < 4 ? <>
+            <button type="button" className="cb-next" disabled={phase !== 'idle'} onClick={() => navigate(step + 1)}>{step===0?(language==='es'?'Agregar':'Add'):t.next} →</button>
+            {step===0 && <button type="button" className="cb-back" disabled={phase !== 'idle'} onClick={()=>{setMode('find');setError('');setSelectedBooking(null);setMatches([])}}>{language==='es'?'Modificar':'Modify'}</button>}
+          </> : <>
+            <button type="button" className="cb-next cb-confirm" disabled={saved || phase !== 'idle' || !first.trim() || !last.trim() || phone.replace(/\D/g,'').length!==10 || !chosenBarber || !date || !isOpenSlot(date,time) || !service} onClick={saveDemoAppointment}>{saved ? '✓ ' + t.confirmed : t.confirm}</button>
             <button type="button" className="cb-back cb-restart" onClick={reset}>{t.restart} ↻</button>
           </>}
         </div>
+        </>}
       </div>
     </section>
   )

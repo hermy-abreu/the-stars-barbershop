@@ -7,8 +7,12 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import ClientBooking from './ClientBooking'
-import BarberDashboard from './BarberDashboard'
-import {STARTER_BARBERS,getStored,putStored} from './demoStore'
+import GoogleReviews from './GoogleReviews'
+import StaffAccess from './StaffAccess'
+import { collection, onSnapshot, doc, runTransaction, setDoc, serverTimestamp, query, where, getDocs, getDoc, deleteDoc } from 'firebase/firestore'
+import { signInAnonymously } from 'firebase/auth'
+import { db, customerAuth, customerDb } from './firebase'
+import { lookupKey } from './bookingLookup'
 
 // Datos editables: confirmar la dirección con el cliente antes de publicar.
 const SHOP = {
@@ -93,12 +97,101 @@ function detectLanguage() {
 }
 
 export default function App() {
-  // Única fuente demo de barberos y citas para sitio, propietario y Staff.
-  const [barbers,setBarbers]=useState(()=>getStored('barbers',STARTER_BARBERS))
-  const [appointments,setAppointments]=useState(()=>getStored('appointments',[]))
+  const [barbers,setBarbers]=useState([])
+  const [appointments] = useState([])
   const [latestBooking,setLatestBooking]=useState(null)
-  useEffect(()=>putStored('barbers',barbers),[barbers])
-  useEffect(()=>putStored('appointments',appointments),[appointments])
+  useEffect(() => {
+    return onSnapshot(collection(db,'barbers'), snapshot => {
+      setBarbers(snapshot.docs.map(item=>({id:item.id,...item.data()})))
+    }, error => console.error('No se pudieron cargar los barberos:',error.code))
+  }, [])
+  function validBusinessSlot(date,time){
+    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!/^[0-9]{2}:[0-9]{2}$/.test(time))return false
+    const weekday=new Date(date+'T12:00:00').getDay()
+    return weekday!==0&&time>='10:00'&&time<='18:30'&&(time.endsWith(':00')||time.endsWith(':30'))
+  }
+  async function checkSlot(barberId,date,time){
+    if(!barberId||!date||!time)return false
+    const marker=await getDoc(doc(customerDb,'occupiedSlots',barberId+'_'+date+'_'+time))
+    return marker.exists()
+  }
+  async function createBooking(item) {
+    if(!validBusinessSlot(item.date,item.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
+    // Customer identity is anonymous; staff must always use their own signed-in account.
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser) await signInAnonymously(customerAuth)
+    if(!customerAuth.currentUser.isAnonymous) throw new Error('Utiliza una sesión de cliente para reservar.')
+    const slot = item.barberId+'_'+item.date+'_'+item.time
+    // Firestore permits CREATE on a free slot and denies UPDATE on an occupied one.
+    await setDoc(doc(customerDb,'appointments',slot),{
+      barberId:item.barberId,first:item.first,last:item.last,
+      phone:item.phone||'',date:item.date,time:item.time,
+      service:item.service,walkIn:false,bookingOwnerUid:customerAuth.currentUser.uid,createdAt:serverTimestamp()
+    })
+    try{await setDoc(doc(customerDb,'occupiedSlots',slot),{occupied:true})}catch(e){console.warn('Availability marker pending:',e.code)}
+    try{
+      const key=await lookupKey(item.first,item.last,item.phone)
+      await setDoc(doc(customerDb,'bookingLookup',key,'items',slot),{barberId:item.barberId,date:item.date,time:item.time,service:item.service})
+    }catch(e){console.warn('Lookup index will be synchronized by owner:',e.code||e.message)}
+    const record={...item,id:slot}
+    setLatestBooking(record)
+    return record
+  }
+  async function findBookings({first,last,phone}) {
+    const key=await lookupKey(first,last,phone)
+    const snapshot=await getDocs(collection(customerDb,'bookingLookup',key,'items'))
+    const entries=await Promise.all(snapshot.docs.map(async entry=>{
+      let sessionOwned=false
+      let bookingOwnerUid=''
+      try {
+        await customerAuth.authStateReady()
+        if(customerAuth.currentUser){
+          const current=await getDoc(doc(customerDb,'appointments',entry.id))
+          if(current.exists()&&current.data().bookingOwnerUid===customerAuth.currentUser.uid){
+            sessionOwned=true
+            bookingOwnerUid=current.data().bookingOwnerUid
+          }
+        }
+      }catch{ /* Another session may search, but may not edit a private appointment. */ }
+      return {id:entry.id,...entry.data(),first:first.trim(),last:last.trim(),phone,sessionOwned,bookingOwnerUid}
+    }))
+    return entries.sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
+  }
+  async function changeBooking(booking,next) {
+    if(!validBusinessSlot(next.date,next.time))throw Error('Negocio cerrado. Lunes a sábado, 10 AM–7 PM.')
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser?.isAnonymous||booking.bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('La sesión no tiene acceso a esta reserva.')
+    const oldId=booking.id, newId=booking.barberId+'_'+next.date+'_'+next.time
+    await runTransaction(customerDb,async tx=>{
+      const original=doc(customerDb,'appointments',oldId)
+      const snap=await tx.get(original)
+      if(!snap.exists()||snap.data().bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('La cita no está disponible.')
+      if(oldId!==newId){
+        const destination=doc(customerDb,'appointments',newId)
+        tx.set(destination,{...snap.data(),date:next.date,time:next.time,createdAt:serverTimestamp()})
+        tx.delete(original)
+      }else{
+        throw new Error('Selecciona una fecha u hora diferente.')
+      }
+    })
+    try {
+      const key=await lookupKey(booking.first,booking.last,booking.phone)
+      await setDoc(doc(customerDb,'bookingLookup',key,'items',newId),{barberId:booking.barberId,date:next.date,time:next.time,service:booking.service})
+      await deleteDoc(doc(customerDb,'bookingLookup',key,'items',oldId))
+    }catch(e){console.warn('Booking lookup update pending:',e.code||e.message)}
+    try { await setDoc(doc(customerDb,'occupiedSlots',newId),{occupied:true}) } catch(e) { console.warn('New availability flag pending:',e.code) }
+    try { await deleteDoc(doc(customerDb,'occupiedSlots',oldId)) } catch(e) { console.warn('Old availability flag cleanup pending:',e.code) }
+  }
+  async function cancelBooking(booking) {
+    await customerAuth.authStateReady()
+    if(!customerAuth.currentUser?.isAnonymous||booking.bookingOwnerUid!==customerAuth.currentUser.uid)throw new Error('Esta sesión no puede cancelar la reserva.')
+    await deleteDoc(doc(customerDb,'appointments',booking.id))
+    try{
+      const key=await lookupKey(booking.first,booking.last,booking.phone)
+      await deleteDoc(doc(customerDb,'bookingLookup',key,'items',booking.id))
+    }catch(e){console.warn('Booking lookup cleanup pending:',e.code||e.message)}
+    try { await deleteDoc(doc(customerDb,'occupiedSlots',booking.id)) } catch(e) { console.warn('Availability cleanup pending:',e.code) }
+  }
   // El idioma se detecta automáticamente al cargar la PWA.
   // La interfaz ya no ofrece un selector manual EN/ES.
   const [language, setLanguage] = useState(detectLanguage)
@@ -112,6 +205,27 @@ export default function App() {
   }, [])
   // Menú móvil accesible; se cierra al seleccionar una sección.
   const [menuOpen, setMenuOpen] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [installHelp, setInstallHelp] = useState(false)
+  const [installed, setInstalled] = useState(() => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
+  useEffect(() => {
+    const onPrompt = event => { event.preventDefault(); setInstallPrompt(event) }
+    const onInstalled = () => { setInstalled(true); setInstallPrompt(null); setInstallHelp(false) }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+  async function requestInstall() {
+    if (installPrompt) {
+      const prompt = installPrompt
+      setInstallPrompt(null)
+      try { await prompt.prompt(); await prompt.userChoice } catch { setInstallHelp(true) }
+    } else { setInstallHelp(true) }
+  }
+
   // Acceso independiente al panel DEMO. No cambia el Home ni las reservas del cliente.
   // Ruta de personal independiente. El enlace Staff conserva el texto en inglés.
   // Esto es navegación de demostración, NO autenticación ni seguridad real.
@@ -141,7 +255,7 @@ export default function App() {
   useEffect(() => { document.documentElement.lang = language }, [language])
   const anchors = ['home', 'services', 'location', 'reviews']
 
-  if (barberView) return <BarberDashboard language={language} onExit={closeStaff} barbers={barbers} setBarbers={setBarbers} appointments={appointments} setAppointments={setAppointments} />
+  if (barberView) return <StaffAccess language={language} onExit={closeStaff} />
 
   return (
     <div className="site">
@@ -243,24 +357,26 @@ export default function App() {
           </div>
         </section>
 
-        {/* Reserva de espacio; no se muestran reseñas ficticias. */}
         <section className="section reviews" id="reviews">
           <div className="container">
             <p className="eyebrow">{t.reviewsEyebrow}</p><h2>{t.reviewsTitle}</h2>
-            <div className="review-panel">
-              <span className="review-panel-icon"><Icon name="message" /></span>
-              <div>
-                <strong>{t.reviewFuture}</strong>
-                <p>{t.reviewsText}</p>
-                <small>{t.reviewDetail}</small>
-              </div>
-            </div>
+            <GoogleReviews language={language} mapsUrl={'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(SHOP.name+' '+SHOP.address)}/>
           </div>
         </section>
 
-        {/* Formulario de prueba sin backend ni reservas reales. */}
-        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCreateAppointment={item=>{ const current=getStored('appointments',appointments); const record={...item,id:Math.max(Date.now(), ...current.map(a=>Number(a.id)||0))+1}; const next=[...current,record]; putStored('appointments',next); setAppointments(next); setLatestBooking(record); return record }} />
+        <ClientBooking language={language} barbers={barbers} appointments={appointments} latestBooking={latestBooking} onCheckSlot={checkSlot} onCreateAppointment={createBooking} onFindAppointments={findBookings} onChangeAppointment={changeBooking} onCancelAppointment={cancelBooking} />
       </main>
+      {!installed && <section className="install-invite" aria-label="Install The Stars Barbershop">
+        <h2>THE STARS BARBERSHOP</h2>
+        <p>{language==='es'?'Accede a tus reservas desde la pantalla de inicio.':'Access bookings from your home screen.'}</p>
+        <button type="button" onClick={requestInstall}>Install</button>
+        {installHelp && <div className="install-instructions" role="status">
+          <p>{/iPhone|iPad|iPod/i.test(navigator.userAgent)
+            ? (language==='es'?'En Safari, pulsa Compartir y luego Agregar a pantalla de inicio.':'In Safari, tap Share, then Add to Home Screen.')
+            : (language==='es'?'Abre el menú ⋮ de Chrome y selecciona Instalar aplicación o Agregar a pantalla principal.':'Open Chrome’s ⋮ menu and choose Install app or Add to Home screen.')}</p>
+          <button type="button" onClick={()=>setInstallHelp(false)}>{language==='es'?'Cerrar':'Close'}</button>
+        </div>}
+      </section>}
       <footer className="footer"><img className="official-logo-footer" src="/images/logo-oficial.png" alt="The Stars Barbershop" /> {SHOP.address}<small>© {new Date().getFullYear()} · {t.rights}</small></footer>
     </div>
   )

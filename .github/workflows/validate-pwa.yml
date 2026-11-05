@@ -1,0 +1,26 @@
+name: Validate PWA test branch
+on:
+  push:
+    branches: [integracion-final-pwa]
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --no-audit
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Build test PWA
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: the-stars-barbershop.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: the-stars-barbershop
+          VITE_FIREBASE_STORAGE_BUCKET: the-stars-barbershop.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '408401127903'
+          VITE_FIREBASE_APP_ID: '1:408401127903:web:c8efe58656af245d67bc6a'

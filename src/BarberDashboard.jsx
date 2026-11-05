@@ -40,7 +40,7 @@ function initialAppointments() {
 
 const WORDS = {
   es: {
-    heading: 'Acceso de barberos', demo: 'DEMO: usuarios y citas ficticios. No hay acceso seguro ni almacenamiento real.',
+    heading: 'Acceso de barberos', demo: 'Citas sincronizadas con Firebase.',
     username: 'Usuario', password: 'Contraseña', login: 'Entrar', invalid: 'Usuario o contraseña de demostración incorrectos.',
     dashboard: 'Mi agenda', logout: 'Cerrar sesión', today: 'Hoy', monthBack: 'Mes anterior', monthNext: 'Mes siguiente',
     days: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], appointments: 'Clientes del día', empty: 'No tienes citas para este día.',
@@ -51,12 +51,11 @@ const WORDS = {
     removeAsk: '¿Eliminar esta cita ficticia?', overlap: 'Ese horario coincide con otra cita de este barbero.',
     conflict: 'Selecciona otro horario antes de guardar.',
     walkinNote: 'Los Walk-in se registran hoy a la hora actual, aunque haya una cita cercana.', walkinOnlyToday: 'Solo puedes registrar Walk-in en el día actual.',
-    example: 'Cuentas de prueba: hermy / Ab1234 · alex / 123456 · miguel / Mr1234 · owner / Ow1234',
-    reserved: 'Con cita', walkinType: 'Sin cita', notSaved: 'Los datos de prueba se conservan únicamente en este navegador.',
-    back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: 'La jornada laboral real se configurará con el propietario.',
+    reserved: 'Con cita', walkinType: 'Sin cita', notSaved: '',
+    back: 'Volver a la web', saveChanges: 'Guardar cambios', noWorkingSchedule: '',
   },
   en: {
-    heading: 'Barber access', demo: 'DEMO: fictitious accounts and appointments. No secure access or real storage.',
+    heading: 'Barber access', demo: 'Appointments synchronized with Firebase.',
     username: 'Username', password: 'Password', login: 'Sign in', invalid: 'Incorrect demo username or password.',
     dashboard: 'My schedule', logout: 'Sign out', today: 'Today', monthBack: 'Previous month', monthNext: 'Next month',
     days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], appointments: 'Appointments for the day', empty: 'No appointments for this day.',
@@ -67,25 +66,40 @@ const WORDS = {
     removeAsk: 'Delete this fictitious appointment?', overlap: 'Another appointment already uses this time for this barber.',
     conflict: 'Choose another time before saving.',
     walkinNote: 'Walk-ins are recorded today at the current time, even near booked appointments.', walkinOnlyToday: 'Walk-ins can only be added for today.',
-    example: 'Demo accounts: hermy / Ab1234 · alex / 123456 · miguel / Mr1234 · owner / Ow1234',
-    reserved: 'Booked', walkinType: 'Walk-in', notSaved: 'Demo data remains in this browser only.',
-    back: 'Back to website', saveChanges: 'Save changes', noWorkingSchedule: 'Real working schedules will be configured with the owner.',
+    reserved: 'Booked', walkinType: 'Walk-in', notSaved: '',
+    back: 'Back to website', saveChanges: 'Save changes', noWorkingSchedule: '',
   },
 }
 
-export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments }) {
+// Stable visual identity for each booking; no Firestore migration or extra writes.
+const BOOKING_COLORS = [
+  ['#DCEBFF', '#173D76'], ['#E4D9FF', '#50318C'],
+  ['#D4F5E3', '#175B3A'], ['#FFE0EB', '#872E53'],
+  ['#FFF1BD', '#66500B'], ['#D8F1F4', '#175B65'],
+  ['#F0E0D1', '#70401E'], ['#E6EBD2', '#455B1F']
+]
+function appointmentColor(appointment) {
+  if (appointment.walkIn) return { backgroundColor: '#FFE0BC', color: '#713800', borderLeft: '4px solid #E57B18' }
+  const identity = String(appointment.id ?? [appointment.barberId, appointment.date, appointment.time, appointment.first, appointment.last].join('|'))
+  let hash = 2166136261
+  for (let i = 0; i < identity.length; i++) hash = Math.imul(hash ^ identity.charCodeAt(i), 16777619)
+  const [backgroundColor, color] = BOOKING_COLORS[(hash >>> 0) % BOOKING_COLORS.length]
+  return { backgroundColor, color, borderLeft: '4px solid ' + color }
+}
+
+export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments, authenticatedBarber=null, onLogout=()=>{}, staffError='' }) {
   const t = WORDS[language] || WORDS.en
   const locale = language === 'es' ? 'es-US' : 'en-US'
   // Perfiles ficticios compartidos por las pantallas Staff y propietario.
   // Al recargar vuelven a su estado inicial (no existe base de datos).
-  const [account, setAccount] = useState(null)
+  const [account, setAccount] = useState(authenticatedBarber)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
   const appointmentListRef = useRef(null)
   function revealList(){ if(window.matchMedia('(max-width:950px)').matches) requestAnimationFrame(()=>appointmentListRef.current?.scrollIntoView({behavior:'smooth',block:'start'})) }
-  const [selectedDay, setSelectedDay] = useState(() => isoDate(new Date()))
-  const [viewMonth, setViewMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+  const [selectedDay, setSelectedDay] = useState(() => new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))
+  const [viewMonth, setViewMonth] = useState(() => new Date())
   const [selectedId, setSelectedId] = useState(null)
   const [editing, setEditing] = useState(false)
   const [draftDate, setDraftDate] = useState('')
@@ -96,18 +110,78 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
   const [modalError, setModalError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [profileOpen,setProfileOpen] = useState(false)
-  const currentBarber = barbers.find(b=>b.id===account?.id)
+  const currentBarber = barbers.find(b=>b.id===account?.id) || authenticatedBarber
   const [profileDraft,setProfileDraft] = useState(null)
-  function openProfile(){setProfileDraft({...currentBarber});setProfileOpen(true)}
-  function uploadProfilePhoto(event){const file=event.target.files?.[0];if(!file)return;
-    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>1100000){alert('Imagen JPG, PNG o WEBP, máximo 1.1 MB para la demo.');return}
-    const reader=new FileReader();reader.onload=()=>setProfileDraft(old=>({...old,photo:String(reader.result)}));reader.readAsDataURL(file)
+  function openProfile(){setProfileDraft({...currentBarber||{name:account?.name||'',alias:'',phone:''}});setProfileOpen(true)}
+  async function uploadProfilePhoto(event){
+    const file=event.target.files?.[0]
+    if(!file)return
+    event.target.value=''
+    if(!file.type.startsWith('image/')){
+      alert(language==='es'?'Selecciona una fotografía válida.':'Select a valid photo.')
+      return
+    }
+    // Accept camera originals; resize and compress locally before storing in Firestore.
+    const url=URL.createObjectURL(file)
+    try{
+      const image=new Image()
+      await new Promise((resolve,reject)=>{
+        image.onload=resolve
+        image.onerror=()=>reject(new Error('Formato de imagen no compatible.'))
+        image.src=url
+      })
+      const canvas=document.createElement('canvas')
+      const maxEdge=640
+      const scale=Math.min(1,maxEdge/Math.max(image.naturalWidth,image.naturalHeight))
+      canvas.width=Math.max(1,Math.round(image.naturalWidth*scale))
+      canvas.height=Math.max(1,Math.round(image.naturalHeight*scale))
+      const context=canvas.getContext('2d')
+      if(!context)throw new Error('No se pudo procesar la imagen.')
+      context.fillStyle='#ffffff'
+      context.fillRect(0,0,canvas.width,canvas.height)
+      context.drawImage(image,0,0,canvas.width,canvas.height)
+      let blob
+      for(const quality of [0.82,0.7,0.55,0.4]){
+        blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality))
+        if(!blob)throw new Error('No se pudo convertir la fotografía.')
+        if(blob.size<=180000)break
+      }
+      if(blob.size>180000)throw new Error('La imagen no pudo comprimirse suficientemente. Prueba otra foto.')
+      const data=await new Promise((resolve,reject)=>{
+        const reader=new FileReader()
+        reader.onload=()=>resolve(String(reader.result||''))
+        reader.onerror=()=>reject(new Error('No se pudo leer la imagen.'))
+        reader.readAsDataURL(blob)
+      })
+      setProfileDraft(old=>old?{...old,photo:data}:old)
+    }catch(error){
+      alert((language==='es'?'No se pudo preparar la foto: ':'Could not prepare photo: ')+error.message)
+    }finally{URL.revokeObjectURL(url)}
   }
-  function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,photo:profileDraft.photo||'',alias:profileDraft.alias||'',phone:formatPhone(profileDraft.phone),instagram:profileDraft.instagram||'',facebook:profileDraft.facebook||'',tiktok:profileDraft.tiktok||'',youtube:profileDraft.youtube||''}:b));setProfileOpen(false)}
+  function saveProfile(event){event.preventDefault();if(profileDraft.phone && formatPhone(profileDraft.phone).replace(/\D/g,'').length!==10){alert(language==='es'?'El teléfono debe tener 10 dígitos o quedar vacío.':'Use 10 phone digits or leave blank.');return}setBarbers(old=>old.map(b=>b.id===account.id?{...b,...profileDraft,phone:formatPhone(profileDraft.phone)}:b));setProfileOpen(false)}
 
   const ownAppointments = useMemo(() => appointments.filter((a) => a.barberId === account?.id), [appointments, account])
   const appointmentsForDay = useMemo(() => ownAppointments.filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time) || a.id - b.id), [ownAppointments, selectedDay])
   const selectedAppointment = ownAppointments.find(a => a.id === selectedId)
+  const weekDays = useMemo(() => {
+    const anchor = fromIso(isoDate(viewMonth))
+    const mondayOffset = (anchor.getDay() + 6) % 7
+    return Array.from({length:7},(_,i)=>({date:shiftDate(isoDate(anchor),i-mondayOffset)}))
+  },[viewMonth])
+  const halfHours = useMemo(()=>{
+    const weekStart=weekDays[0].date, weekEnd=weekDays[6].date
+    const outsideHours=ownAppointments.filter(a=>a.walkIn&&a.date>=weekStart&&a.date<=weekEnd&&/^[0-9]{2}:[0-9]{2}$/.test(a.time||'')).map(a=>{
+      const [hour,minute]=a.time.split(':').map(Number)
+      return hour*60+Math.floor(minute/30)*30
+    })
+    const first=Math.max(0,Math.min(600,...outsideHours))
+    const last=Math.min(1410,Math.max(1140,...outsideHours))
+    return Array.from({length:(last-first)/30+1},(_,i)=>{
+      const n=first+i*30
+      return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`
+    })
+  },[ownAppointments,weekDays])
+
   // Outlook: semanas de domingo a sábado, con celdas completas de otros meses.
   const monthStartOffset = viewMonth.getDay()
   const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate()
@@ -127,10 +201,6 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
 
   function login(event) {
     event.preventDefault()
-    if (username.trim().toLowerCase() === 'owner' && password === 'Ow1234') {
-      setAccount({ id: 'OWNER', name: 'Propietario (demo)', username: 'owner', role: 'owner' })
-      setLoginError(''); setPassword(''); return
-    }
     const barber = barbers.find(b => b.active !== false && b.username === username.trim().toLowerCase() && b.password === password)
     if (!barber) { setLoginError(t.invalid); return }
     setAccount({ id: barber.id, name: barber.name, username: barber.username, role: 'barber' })
@@ -159,7 +229,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     if (overlap && !selectedAppointment.walkIn) { setModalError(t.overlap); return }
     setAppointments(current => current.map(a => a.id === selectedId && a.barberId === account.id ? { ...a, date: draftDate, time: draftTime } : a))
     setSelectedDay(draftDate)
-    setViewMonth(new Date(fromIso(draftDate).getFullYear(), fromIso(draftDate).getMonth(), 1))
+    setViewMonth(fromIso(draftDate))
     closeModal()
   }
   function deleteAppointment() {
@@ -175,16 +245,16 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
     if (selectedDay !== shopToday()) { setModalError(t.walkinOnlyToday); setAddingWalkin(false); return }
     // El Walk-in queda asociado al barbero conectado y a la hora REAL de registro.
     setAppointments(current => [...current, {
-      id: Math.max(0, ...current.map(a => a.id)) + 1,
+      id: `${account.id}_${shopToday()}_walkin_${crypto.randomUUID()}`,
       barberId: account.id, first: walkinFirst.trim(), last: walkinLast.trim(), phone: '',
       date: shopToday(), time: new Intl.DateTimeFormat('en-GB', {timeZone: 'America/New_York', hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).format(now),
       service: '', walkIn: true,
     }])
     setSelectedDay(shopToday())
-    setViewMonth(new Date(fromIso(shopToday()).getFullYear(), fromIso(shopToday()).getMonth(), 1))
+    setViewMonth(fromIso(shopToday()))
     setWalkinFirst(''); setWalkinLast(''); closeModal()
   }
-  function signOut() { setAccount(null); setUsername(''); setPassword(''); closeModal() }
+  function signOut() { if(authenticatedBarber){onLogout();return} setAccount(null); setUsername(''); setPassword(''); closeModal() }
 
   if (!account) return (
     <section className="barber-area" aria-label={t.heading}>
@@ -199,7 +269,6 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
           {loginError && <p role="alert" className="barber-error">{loginError}</p>}
           <button type="submit" className="barber-gold-button">{t.login}</button>
         </form>
-        <p className="barber-demo-hint">{t.example}</p>
       </div>
     </section>
   )
@@ -215,7 +284,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
         <p>{language==='es'?'El nombre y apellido los administra el propietario. Todos los demás datos son opcionales y visibles al público.':'Name is managed by the owner. Other fields are optional and public.'}</p>
         <form onSubmit={saveProfile} className="profile-fields">
           <label>{language==='es'?'Nombre y apellido':'Full name'}<input value={currentBarber?.name||''} disabled /></label>
-          <label>{language==='es'?'Fotografía':'Photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadProfilePhoto}/></label>
+          <label>{language==='es'?'Fotografía (ajuste automático)':'Photo (automatic optimization)'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadProfilePhoto}/></label>
           {profileDraft.photo && <img className="profile-photo-preview" alt="Vista previa" src={profileDraft.photo} />}
           {profileDraft.photo && <button type="button" onClick={()=>setProfileDraft(old=>({...old,photo:''}))}>{language==='es'?'Quitar fotografía':'Remove photo'}</button>}
           <label>{language==='es'?'Alias profesional':'Professional nickname'}<input maxLength={60} value={profileDraft.alias||''} onChange={e=>setProfileDraft(old=>({...old,alias:e.target.value}))}/></label>
@@ -226,43 +295,35 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
 
       <div className="barber-shell">
         <header className="barber-panel-header">
-          <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF · DEMO</p><h2>{t.dashboard}</h2><p>{account.name} · {account.id}</p></div>
+          <div><img src="/images/logo-oficial.png" className="barber-official-logo barber-logo-small" alt="The Stars Barbershop" /><p className="barber-kicker">STAFF</p><h2>{t.dashboard}</h2><p>{currentBarber?.alias || currentBarber?.name || (language==='es'?'Mi agenda':'My schedule')}</p></div>
           <div className="barber-header-actions"><button type="button" onClick={openProfile} aria-label="Editar mi perfil profesional">👤 {language === 'es' ? 'Mi perfil' : 'My profile'}</button><button type="button" onClick={onExit}>{t.back}</button><button type="button" onClick={signOut}>{t.logout}</button></div>
         </header>
-        <p className="barber-demo-banner">{t.demo} {t.notSaved}</p>
-        {/* Calendario Outlook: vista del mes completo, sin mini-cuadrícula. */}
-        <div className="barber-calendar-layout">
+        {staffError && <p role="alert" className="barber-error">{staffError}</p>}
+        {/* Agenda semanal: nombre completo y detalles al pulsar. */}
+        <div className="barber-calendar-layout barber-calendar-layout-weekly">
           <article className="barber-card barber-calendar-card">
             <div className="barber-month-controls">
-              <button type="button" className="barber-today" onClick={() => {
-                const current = shopToday()
-                setSelectedDay(current)
-                const date = fromIso(current)
-                setViewMonth(new Date(date.getFullYear(), date.getMonth(), 1))
-              }}>{t.today}</button>
+              <button type="button" className="barber-today" onClick={() => { const now=shopToday(); setSelectedDay(now); setViewMonth(fromIso(now)) }}>{t.today}</button>
               <div className="barber-month-navigation">
-                <button type="button" onClick={() => monthMove(-1)} aria-label={t.monthBack}>‹</button>
-                <button type="button" onClick={() => monthMove(1)} aria-label={t.monthNext}>›</button>
+                <button type="button" onClick={() => {setViewMonth(d => fromIso(shiftDate(isoDate(d), -7)));setSelectedDay(d=>shiftDate(d,-7))}} aria-label={language==='es'?'Semana anterior':'Previous week'}>‹</button>
+                <button type="button" onClick={() => {setViewMonth(d => fromIso(shiftDate(isoDate(d), 7)));setSelectedDay(d=>shiftDate(d,7))}} aria-label={language==='es'?'Semana siguiente':'Next week'}>›</button>
               </div>
-              <h3 className="barber-month-title">{viewMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</h3>
+              <h3 className="barber-month-title">{language==='es'?'Semana del':'Week of'} {weekDays[0].date} — {weekDays[6].date}</h3>
             </div>
-            <div className="barber-calendar-grid" aria-label={t.dashboard}>
-              {t.days.map((day, index) => <div className="barber-weekday" key={`${day}-${index}`}>{day}</div>)}
-              {calendarDays.map(cell => {
-                const count = ownAppointments.filter(a => a.date === cell.date).length
-                return <button key={cell.date} type="button"
-                  className={`barber-day ${cell.outside ? 'outside' : ''} ${cell.date === selectedDay ? 'selected' : ''} ${cell.date === shopToday() ? 'today' : ''}`}
-                  aria-label={`${cell.date}, ${count} ${t.appointments}`}
-                  aria-pressed={cell.date === selectedDay}
-                  onClick={() => {
-                    setSelectedDay(cell.date)
-                    revealList()
-                    if (cell.outside) { const d = fromIso(cell.date); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)) }
-                  }}>
-                  <span className="barber-day-number">{cell.label}</span>
-                  {count > 0 && <span className="barber-day-count">{count}</span>}
-                </button>
-              })}
+            <div className="barber-week-scroll" role="region" tabIndex={0} aria-label={language==='es'?'Agenda semanal desplazable':'Scrollable weekly schedule'}>
+              <div className="barber-week-grid">
+                <div className="barber-week-corner">{language==='es'?'Hora':'Time'}</div>
+                {weekDays.map(day => <button type="button" key={day.date} className={`barber-week-header ${day.date===selectedDay?'selected':''}`} onClick={()=>setSelectedDay(day.date)}>{fromIso(day.date).toLocaleDateString(locale,{weekday:'short',day:'numeric'})}</button>)}
+                {halfHours.map(time => <div className="barber-time-row" key={time}>
+                  <div className="barber-hour-label">{timeLabel(time,language)}</div>
+                  {weekDays.map(day => {
+                    const matches=ownAppointments.filter(a=>a.date===day.date && (a.walkIn ? (()=>{const [h,m]=a.time.split(':').map(Number);return `${String(h).padStart(2,'0')}:${m<30?'00':'30'}`===time})() : a.time===time))
+                    return <div key={day.date+time} className="barber-time-cell">
+                      {matches.map(a => <button type="button" key={a.id} className={`barber-time-appointment ${a.walkIn?'walkin':''}`} style={appointmentColor(a)} onClick={()=>{setSelectedDay(day.date);openAppointment(a.id)}} title={`${timeLabel(a.time,language)} · ${a.first} ${a.last}`}>{a.walkIn?`${timeLabel(a.time,language)} · `:''}{a.first} {a.last}</button>)}
+                    </div>
+                  })}
+                </div>)}
+              </div>
             </div>
           </article>
           {/* En desktop esta lista aparece a la derecha; en móvil, debajo. */}
@@ -271,11 +332,11 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
               {isTodaySelected && <button type="button" className="barber-add" onClick={() => { setAddingWalkin(true); setModalError('') }}>{t.walkin}</button>}
             </div>
             {appointmentsForDay.length ? <ul className="barber-appointment-list">{appointmentsForDay.map(a => <li key={a.id}>
-              <button type="button" className="barber-client-row" onClick={() => openAppointment(a.id)}>
+              <button type="button" className="barber-client-row" style={appointmentColor(a)} onClick={() => openAppointment(a.id)}>
                 <time>{timeLabel(a.time, language)}</time><span><strong>{a.first} {a.last}</strong><small>{a.walkIn ? t.walkinType : t.reserved}{a.phone ? ` · ${a.phone}` : ''}</small></span><span className="barber-arrow">›</span>
               </button>
             </li>)}</ul> : <p className="barber-empty">{t.empty}</p>}
-            <p className="barber-small-note">{t.noWorkingSchedule}</p>
+
           </article>
         </div>
       </div>
