@@ -71,6 +71,22 @@ const WORDS = {
   },
 }
 
+// Stable visual identity for each booking; no Firestore migration or extra writes.
+const BOOKING_COLORS = [
+  ['#DCEBFF', '#173D76'], ['#E4D9FF', '#50318C'],
+  ['#D4F5E3', '#175B3A'], ['#FFE0EB', '#872E53'],
+  ['#FFF1BD', '#66500B'], ['#D8F1F4', '#175B65'],
+  ['#F0E0D1', '#70401E'], ['#E6EBD2', '#455B1F']
+]
+function appointmentColor(appointment) {
+  if (appointment.walkIn) return { backgroundColor: '#FFE0BC', color: '#713800', borderLeft: '4px solid #E57B18' }
+  const identity = String(appointment.id ?? [appointment.barberId, appointment.date, appointment.time, appointment.first, appointment.last].join('|'))
+  let hash = 2166136261
+  for (let i = 0; i < identity.length; i++) hash = Math.imul(hash ^ identity.charCodeAt(i), 16777619)
+  const [backgroundColor, color] = BOOKING_COLORS[(hash >>> 0) % BOOKING_COLORS.length]
+  return { backgroundColor, color, borderLeft: '4px solid ' + color }
+}
+
 export default function BarberDashboard({ language = 'es', onExit, barbers, setBarbers, appointments, setAppointments, authenticatedBarber=null, onLogout=()=>{}, staffError='' }) {
   const t = WORDS[language] || WORDS.en
   const locale = language === 'es' ? 'es-US' : 'en-US'
@@ -303,7 +319,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
                   {weekDays.map(day => {
                     const matches=ownAppointments.filter(a=>a.date===day.date && (a.walkIn ? (()=>{const [h,m]=a.time.split(':').map(Number);return `${String(h).padStart(2,'0')}:${m<30?'00':'30'}`===time})() : a.time===time))
                     return <div key={day.date+time} className="barber-time-cell">
-                      {matches.map(a => <button type="button" key={a.id} className={`barber-time-appointment ${a.walkIn?'walkin':''}`} onClick={()=>{setSelectedDay(day.date);openAppointment(a.id)}} title={`${timeLabel(a.time,language)} · ${a.first} ${a.last}`}>{a.walkIn?`${timeLabel(a.time,language)} · `:''}{a.first} {a.last}</button>)}
+                      {matches.map(a => <button type="button" key={a.id} className={`barber-time-appointment ${a.walkIn?'walkin':''}`} style={appointmentColor(a)} onClick={()=>{setSelectedDay(day.date);openAppointment(a.id)}} title={`${timeLabel(a.time,language)} · ${a.first} ${a.last}`}>{a.walkIn?`${timeLabel(a.time,language)} · `:''}{a.first} {a.last}</button>)}
                     </div>
                   })}
                 </div>)}
@@ -316,7 +332,7 @@ export default function BarberDashboard({ language = 'es', onExit, barbers, setB
               {isTodaySelected && <button type="button" className="barber-add" onClick={() => { setAddingWalkin(true); setModalError('') }}>{t.walkin}</button>}
             </div>
             {appointmentsForDay.length ? <ul className="barber-appointment-list">{appointmentsForDay.map(a => <li key={a.id}>
-              <button type="button" className="barber-client-row" onClick={() => openAppointment(a.id)}>
+              <button type="button" className="barber-client-row" style={appointmentColor(a)} onClick={() => openAppointment(a.id)}>
                 <time>{timeLabel(a.time, language)}</time><span><strong>{a.first} {a.last}</strong><small>{a.walkIn ? t.walkinType : t.reserved}{a.phone ? ` · ${a.phone}` : ''}</small></span><span className="barber-arrow">›</span>
               </button>
             </li>)}</ul> : <p className="barber-empty">{t.empty}</p>}
